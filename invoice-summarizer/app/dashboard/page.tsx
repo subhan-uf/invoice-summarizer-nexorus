@@ -1,0 +1,549 @@
+"use client";
+
+import { Card, CardBody, CardHeader } from "@heroui/card";
+import { Button } from "@heroui/button";
+import { Chip } from "@heroui/chip";
+import { Progress } from "@heroui/progress";
+import { title, subtitle } from "@/components/primitives";
+import DashboardLayout from "@/components/dashboard-layout";
+import { 
+  DocumentTextIcon,
+  UserGroupIcon,
+  EnvelopeIcon,
+  ArrowUpIcon,
+  ArrowDownIcon,
+  ClockIcon,
+  CheckCircleIcon,
+  ExclamationTriangleIcon,
+  ChartBarIcon,
+  TrendingUpIcon,
+  SparklesIcon,
+  BellIcon,
+  InboxIcon,
+  DocumentArrowDownIcon,
+  CloudArrowUpIcon
+} from "@heroicons/react/24/outline";
+import { useEffect, useState } from "react";
+import { supabase } from "@/lib/supabaseClient";
+import GmailConnect from "@/components/gmail-connect";
+import toast from "react-hot-toast";
+
+// Mock data
+const stats = [
+  {
+    title: "Total Invoices",
+    value: "1,247",
+    change: "+12.5%",
+    changeType: "positive",
+    icon: DocumentTextIcon,
+    color: "primary"
+  },
+  {
+    title: "Email Detected",
+    value: "892",
+    change: "+8.2%",
+    changeType: "positive",
+    icon: InboxIcon,
+    color: "secondary"
+  },
+  {
+    title: "PDF Downloads",
+    value: "456",
+    change: "+23.1%",
+    changeType: "positive",
+    icon: DocumentArrowDownIcon,
+    color: "success"
+  },
+  {
+    title: "Emails Sent",
+    value: "234",
+    change: "+15.3%",
+    changeType: "positive",
+    icon: EnvelopeIcon,
+    color: "warning"
+  }
+];
+
+const recentActivity = [
+  {
+    id: 1,
+    type: "email",
+    action: "Invoice detected from email",
+    description: "INV-2024-001 from TechCorp",
+    time: "2 minutes ago",
+    status: "success"
+  },
+  {
+    id: 2,
+    type: "pdf",
+    action: "PDF summary downloaded",
+    description: "Wilson Consulting Invoice",
+    time: "5 minutes ago",
+    status: "success"
+  },
+  {
+    id: 3,
+    type: "email",
+    action: "Summary sent via email",
+    description: "To sarah@techcorp.com",
+    time: "1 hour ago",
+    status: "success"
+  },
+  {
+    id: 4,
+    type: "upload",
+    action: "Manual upload processed",
+    description: "Design Studio Invoice",
+    time: "2 hours ago",
+    status: "success"
+  }
+];
+
+const getStatusIcon = (status: string) => {
+  switch (status) {
+    case "success":
+      return CheckCircleIcon;
+    case "warning":
+      return ExclamationTriangleIcon;
+    case "info":
+      return ClockIcon;
+    default:
+      return ClockIcon;
+  }
+};
+
+const getStatusColor = (status: string) => {
+  switch (status) {
+    case "success":
+      return "success";
+    case "warning":
+      return "warning";
+    case "info":
+      return "primary";
+    default:
+      return "default";
+  }
+};
+
+export default function DashboardPage() {
+  const [invoices, setInvoices] = useState<any[]>([]);
+  const [emails, setEmails] = useState<any[]>([]);
+  const [clients, setClients] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [successMessage, setSuccessMessage] = useState("");
+  const [showMessage, setShowMessage] = useState(false);
+
+  useEffect(() => {
+    // Check for URL parameters for success/error messages
+    const urlParams = new URLSearchParams(window.location.search);
+    const success = urlParams.get('success');
+    const errorMsg = urlParams.get('error');
+    const message = urlParams.get('message');
+
+    if (success === 'gmail_connected' && message) {
+      setSuccessMessage(decodeURIComponent(message));
+      setShowMessage(true);
+      toast.success(decodeURIComponent(message));
+      // Clear URL parameters
+      window.history.replaceState({}, document.title, window.location.pathname);
+    } else if (errorMsg === 'gmail_connection_failed' && message) {
+      setError(decodeURIComponent(message));
+      setShowMessage(true);
+      toast.error(decodeURIComponent(message));
+      // Clear URL parameters
+      window.history.replaceState({}, document.title, window.location.pathname);
+    }
+
+    const fetchAll = async () => {
+      setLoading(true);
+      setError("");
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        setError("Not authenticated");
+        setLoading(false);
+        return;
+      }
+      const [invRes, emailRes, clientRes] = await Promise.all([
+        supabase.from("invoices").select("*").eq("user_id", user.id),
+        supabase.from("email_history").select("*").eq("user_id", user.id),
+        supabase.from("clients").select("*").eq("user_id", user.id),
+      ]);
+      if (invRes.error || emailRes.error || clientRes.error) {
+        setError(invRes.error?.message || emailRes.error?.message || clientRes.error?.message || "Unknown error");
+        setLoading(false);
+        return;
+      }
+      setInvoices(invRes.data || []);
+      setEmails(emailRes.data || []);
+      setClients(clientRes.data || []);
+      setLoading(false);
+    };
+    fetchAll();
+  }, []);
+
+  // Stats
+  const totalInvoices = invoices.length;
+  const emailDetected = invoices.filter(i => i.source === "email").length;
+  const pdfDownloads = emails.length; // or use a separate downloads table if you have one
+  const emailsSent = emails.length;
+
+  // Processing Performance Metrics
+  const processingStats = {
+    total: totalInvoices,
+    processed: invoices.filter(i => i.status === "processed").length,
+    processing: invoices.filter(i => i.status === "processing").length,
+    failed: invoices.filter(i => i.status === "failed").length,
+    uploaded: invoices.filter(i => i.status === "uploaded").length,
+    successRate: totalInvoices > 0 ? Math.round((invoices.filter(i => i.status === "processed").length / totalInvoices) * 100) : 0,
+    avgProcessingTime: "2.3s" // This would need to be calculated from actual processing times
+  };
+
+  // Recent activity (combine invoices and emails, sort by created_at/date)
+  const recentActivity = [
+    ...invoices.map(i => ({
+      id: i.id,
+      type: i.source,
+      action: i.source === "email" ? "Invoice detected from email" : "Manual upload processed",
+      description: i.name,
+      time: i.created_at || i.date,
+      status: i.status === "processed" ? "success" : i.status === "failed" ? "warning" : "info"
+    })),
+    ...emails.map(e => ({
+      id: e.id,
+      type: "email_sent",
+      action: "Summary sent via email",
+      description: e.subject,
+      time: e.date + (e.time ? " " + e.time : ""),
+      status: e.status === "delivered" ? "success" : e.status === "failed" ? "warning" : "info"
+    }))
+  ].sort((a, b) => new Date(b.time).getTime() - new Date(a.time).getTime()).slice(0, 10);
+
+  return (
+    <DashboardLayout>
+      <div className="space-y-8">
+        {/* Header */}
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+          <div>
+            <h1 className={title({ size: "lg" })}>Dashboard</h1>
+            <p className={subtitle({ class: "mt-2" })}>
+              Monitor your invoice processing workflow - from email detection to PDF output
+            </p>
+          </div>
+          <div className="flex gap-3">
+            <Button
+              variant="bordered"
+              color="primary"
+              startContent={<BellIcon className="w-4 h-4" />}
+            >
+              Notifications
+            </Button>
+            <Button
+              color="primary"
+              startContent={<CloudArrowUpIcon className="w-4 h-4" />}
+            >
+              Upload Invoice
+            </Button>
+          </div>
+        </div>
+
+        {/* Gmail Connection Status */}
+        <GmailConnect variant="card" />
+
+        {/* Success/Error Messages */}
+        {showMessage && (successMessage || error) && (
+          <Card className={`${successMessage ? 'bg-success/10 border-success/20' : 'bg-danger/10 border-danger/20'} backdrop-blur-sm`}>
+            <CardBody className="p-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className={`${successMessage ? 'bg-success/20' : 'bg-danger/20'} rounded-full p-2`}>
+                    {successMessage ? (
+                      <CheckCircleIcon className="w-5 h-5 text-success" />
+                    ) : (
+                      <ExclamationTriangleIcon className="w-5 h-5 text-danger" />
+                    )}
+                  </div>
+                  <div>
+                    <p className={`font-medium ${successMessage ? 'text-success' : 'text-danger'}`}>
+                      {successMessage || error}
+                    </p>
+                  </div>
+                </div>
+                <Button
+                  size="sm"
+                  variant="light"
+                  onPress={() => {
+                    setShowMessage(false);
+                    setSuccessMessage("");
+                    setError("");
+                  }}
+                >
+                  ✕
+                </Button>
+              </div>
+            </CardBody>
+          </Card>
+        )}
+
+        {/* Stats Cards */}
+        {loading ? (
+          <div className="text-center py-8">Loading dashboard...</div>
+        ) : error ? (
+          <div className="text-danger text-center py-8">{error}</div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <Card className="bg-content1/50 backdrop-blur-sm border-1 border-divider/50 hover:border-primary/30 transition-all duration-300">
+              <CardBody className="p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="bg-primary/10 rounded-full p-3">
+                    <DocumentTextIcon className="w-6 h-6 text-primary" />
+                  </div>
+                </div>
+                <div>
+                  <p className="text-2xl font-bold">{totalInvoices}</p>
+                  <p className="text-sm text-default-600">Total Invoices</p>
+                </div>
+              </CardBody>
+            </Card>
+            <Card className="bg-content1/50 backdrop-blur-sm border-1 border-divider/50 hover:border-primary/30 transition-all duration-300">
+              <CardBody className="p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="bg-secondary/10 rounded-full p-3">
+                    <InboxIcon className="w-6 h-6 text-secondary" />
+                  </div>
+                </div>
+                <div>
+                  <p className="text-2xl font-bold">{emailDetected}</p>
+                  <p className="text-sm text-default-600">Email Detected</p>
+                </div>
+              </CardBody>
+            </Card>
+            <Card className="bg-content1/50 backdrop-blur-sm border-1 border-divider/50 hover:border-primary/30 transition-all duration-300">
+              <CardBody className="p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="bg-success/10 rounded-full p-3">
+                    <DocumentArrowDownIcon className="w-6 h-6 text-success" />
+                  </div>
+                </div>
+                <div>
+                  <p className="text-2xl font-bold">{pdfDownloads}</p>
+                  <p className="text-sm text-default-600">PDF Downloads</p>
+                </div>
+              </CardBody>
+            </Card>
+            <Card className="bg-content1/50 backdrop-blur-sm border-1 border-divider/50 hover:border-primary/30 transition-all duration-300">
+              <CardBody className="p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="bg-warning/10 rounded-full p-3">
+                    <EnvelopeIcon className="w-6 h-6 text-warning" />
+                  </div>
+                </div>
+                <div>
+                  <p className="text-2xl font-bold">{emailsSent}</p>
+                  <p className="text-sm text-default-600">Emails Sent</p>
+                </div>
+              </CardBody>
+            </Card>
+          </div>
+        )}
+
+        {/* Main Content Grid */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          {/* Recent Activity */}
+          <div className="lg:col-span-2">
+            <Card className="bg-content1/50 backdrop-blur-sm border-1 border-divider/50">
+              <CardHeader className="pb-4">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-lg font-semibold">Recent Activity</h3>
+                </div>
+              </CardHeader>
+              <CardBody className="pt-0">
+                {loading ? (
+                  <div className="text-center py-8">Loading activity...</div>
+                ) : error ? (
+                  <div className="text-danger text-center py-8">{error}</div>
+                ) : (
+                  <div className="space-y-4">
+                    {recentActivity.map((activity) => {
+                      const StatusIcon = getStatusIcon(activity.status);
+                      return (
+                        <div key={activity.id} className="flex items-start gap-4 p-4 rounded-lg bg-content1/30 hover:bg-content1/50 transition-colors">
+                          <div className={`bg-${getStatusColor(activity.status)}/10 rounded-full p-2 mt-1`}>
+                            <StatusIcon className={`w-4 h-4 text-${getStatusColor(activity.status)}`} />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center justify-between mb-1">
+                              <p className="font-medium text-sm">{activity.action}</p>
+                              <span className="text-xs text-default-500">{activity.time}</span>
+                            </div>
+                            <p className="text-sm text-default-600">{activity.description}</p>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </CardBody>
+            </Card>
+          </div>
+
+          {/* Quick Actions & Progress */}
+          <div className="space-y-6">
+            {/* Quick Actions */}
+            <Card className="bg-content1/50 backdrop-blur-sm border-1 border-divider/50">
+              <CardHeader className="pb-4">
+                <h3 className="text-lg font-semibold">Quick Actions</h3>
+              </CardHeader>
+              <CardBody className="pt-0">
+                <div className="space-y-3">
+                  <Button
+                    variant="bordered"
+                    color="primary"
+                    className="w-full justify-start"
+                    startContent={<CloudArrowUpIcon className="w-4 h-4" />}
+                  >
+                    Upload Invoice
+                  </Button>
+                  <Button
+                    variant="bordered"
+                    color="secondary"
+                    className="w-full justify-start"
+                    startContent={<InboxIcon className="w-4 h-4" />}
+                  >
+                    Check Email
+                  </Button>
+                  <Button
+                    variant="bordered"
+                    color="success"
+                    className="w-full justify-start"
+                    startContent={<DocumentArrowDownIcon className="w-4 h-4" />}
+                  >
+                    Download PDF
+                  </Button>
+                  <Button
+                    variant="bordered"
+                    color="warning"
+                    className="w-full justify-start"
+                    startContent={<EnvelopeIcon className="w-4 h-4" />}
+                  >
+                    Send via Email
+                  </Button>
+                </div>
+              </CardBody>
+            </Card>
+
+            {/* Processing Progress */}
+            <Card className="bg-content1/50 backdrop-blur-sm border-1 border-divider/50">
+              <CardHeader className="pb-4">
+                <h3 className="text-lg font-semibold">Processing Status</h3>
+              </CardHeader>
+              <CardBody className="pt-0">
+                <div className="space-y-4">
+                  <div>
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-sm font-medium">Current Queue</span>
+                      <span className="text-sm text-default-600">{processingStats.processing} invoices</span>
+                    </div>
+                    <Progress
+                      value={processingStats.total > 0 ? Math.round((processingStats.processed / processingStats.total) * 100) : 0}
+                      color="primary"
+                      className="mb-4"
+                    />
+                    <p className="text-xs text-default-500">
+                      {processingStats.processing > 0 ? `Processing ${processingStats.processing} invoices` : 'No invoices in queue'}
+                    </p>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between text-sm">
+                      <span>Processing Status</span>
+                      <span className="font-medium text-success">
+                        {processingStats.processing > 0 ? `${processingStats.processing} active` : 'Idle'}
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between text-sm">
+                      <span>Success Rate</span>
+                      <span className={`font-medium ${processingStats.successRate >= 90 ? 'text-success' : processingStats.successRate >= 70 ? 'text-warning' : 'text-danger'}`}>
+                        {processingStats.successRate}%
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between text-sm">
+                      <span>Processed Today</span>
+                      <span className="font-medium">{processingStats.processed}</span>
+                    </div>
+                    <div className="flex items-center justify-between text-sm">
+                      <span>Failed</span>
+                      <span className="font-medium text-danger">{processingStats.failed}</span>
+                    </div>
+                  </div>
+                </div>
+              </CardBody>
+            </Card>
+          </div>
+        </div>
+
+        {/* Performance Chart Placeholder */}
+        <Card className="bg-content1/50 backdrop-blur-sm border-1 border-divider/50">
+          <CardHeader className="pb-4">
+            <div className="flex items-center justify-between">
+              <h3 className="text-lg font-semibold">Processing Performance</h3>
+              <div className="flex gap-2">
+                <Button variant="light" size="sm">7 Days</Button>
+                <Button variant="light" size="sm" color="primary">30 Days</Button>
+                <Button variant="light" size="sm">90 Days</Button>
+              </div>
+            </div>
+          </CardHeader>
+          <CardBody className="pt-0">
+            <div className="h-64 bg-gradient-to-br from-primary/10 via-secondary/10 to-primary/10 rounded-lg border-1 border-divider/50 flex items-center justify-center">
+              <div className="text-center">
+                <ChartBarIcon className="w-16 h-16 mx-auto text-primary mb-4" />
+                <p className="text-default-600 font-medium">Processing Analytics</p>
+                <p className="text-sm text-default-500">Email detection, uploads, and output tracking</p>
+              </div>
+            </div>
+          </CardBody>
+        </Card>
+
+        {/* Get Started Tips */}
+        <Card className="bg-gradient-to-r from-primary/10 to-secondary/10 border-1 border-primary/20">
+          <CardBody className="p-6">
+            <div className="flex items-start gap-4">
+              <div className="bg-primary/20 rounded-full p-3">
+                <SparklesIcon className="w-6 h-6 text-primary" />
+              </div>
+              <div className="flex-1">
+                <h3 className="text-lg font-semibold mb-2">Get Started with AI Invoice Summarizer</h3>
+                <p className="text-default-600 mb-4">
+                  Ready to streamline your invoice processing? Here's how to get started with our complete workflow.
+                </p>
+                <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
+                  <div className="bg-content1/50 backdrop-blur-sm rounded-lg p-4 border-1 border-divider/50">
+                    <div className="text-2xl font-bold text-primary mb-1">1</div>
+                    <h4 className="font-medium mb-2">Connect Email</h4>
+                    <p className="text-sm text-default-600">Link your email for automatic invoice detection</p>
+                  </div>
+                  <div className="bg-content1/50 backdrop-blur-sm rounded-lg p-4 border-1 border-divider/50">
+                    <div className="text-2xl font-bold text-primary mb-1">2</div>
+                    <h4 className="font-medium mb-2">Upload or Detect</h4>
+                    <p className="text-sm text-default-600">Manually upload or let our system detect invoices</p>
+                  </div>
+                  <div className="bg-content1/50 backdrop-blur-sm rounded-lg p-4 border-1 border-divider/50">
+                    <div className="text-2xl font-bold text-primary mb-1">3</div>
+                    <h4 className="font-medium mb-2">Get Summaries</h4>
+                    <p className="text-sm text-default-600">AI processes and creates detailed summaries</p>
+                  </div>
+                  <div className="bg-content1/50 backdrop-blur-sm rounded-lg p-4 border-1 border-divider/50">
+                    <div className="text-2xl font-bold text-primary mb-1">4</div>
+                    <h4 className="font-medium mb-2">Download or Send</h4>
+                    <p className="text-sm text-default-600">Download PDF or send via email</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </CardBody>
+        </Card>
+      </div>
+    </DashboardLayout>
+  );
+} 

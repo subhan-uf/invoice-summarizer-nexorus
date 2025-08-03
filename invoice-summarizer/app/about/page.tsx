@@ -247,8 +247,8 @@ export default function AboutPage() {
                 </div>
                 <h3 className="text-xl font-semibold mb-4">Innovation</h3>
                 <p className="text-default-600 leading-relaxed">
-                  We constantly push the boundaries of what's possible with AI and automation, 
-                  always seeking new ways to improve our customers' workflows.
+                  We constantly push the boundaries of what&apos;s possible with AI and automation, 
+                  always seeking new ways to improve our customers&apos; workflows.
                 </p>
               </CardBody>
             </Card>
@@ -260,7 +260,7 @@ export default function AboutPage() {
                 </div>
                 <h3 className="text-xl font-semibold mb-4">Security</h3>
                 <p className="text-default-600 leading-relaxed">
-                  We prioritize the security and privacy of our customers' data, implementing 
+                  We prioritize the security and privacy of our customers&apos; data, implementing 
                   bank-level encryption and never storing sensitive information permanently.
                 </p>
               </CardBody>
@@ -310,7 +310,7 @@ export default function AboutPage() {
                 <p className="text-primary font-medium mb-4">Founder & CEO</p>
                 <p className="text-default-600 text-sm leading-relaxed">
                   Visionary leader with expertise in AI, machine learning, and enterprise software. 
-                  Drives the company's strategic direction and innovation.
+                  Drives the company&apos;s strategic direction and innovation.
                 </p>
                 <div className="flex justify-center gap-2 mt-4">
                   <Link href="https://www.linkedin.com/in/subhan-farooq/" color="primary" isExternal>

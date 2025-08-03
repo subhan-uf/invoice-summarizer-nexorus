@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { ChatOpenAI } from '@langchain/openai';
 import { PromptTemplate } from '@langchain/core/prompts';
+import { StringOutputParser } from '@langchain/core/output_parsers';
 
 // Initialize Supabase client with service role key to bypass RLS
 const supabase = createClient(
@@ -9,33 +10,51 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
 
-// Initialize OpenAI
+// Initialize OpenAI - Using same configuration as PDF processing
 const llm = new ChatOpenAI({
   openAIApiKey: process.env.OPENAI_API_KEY,
-  modelName: "gpt-4",
-  temperature: 0,
+  modelName: "gpt-3.5-turbo",
+  temperature: 0.3,
 });
 
-// Email invoice processing prompt
+// Email invoice processing prompt - Using the same detailed structure as PDF processing
 const emailInvoicePrompt = PromptTemplate.fromTemplate(`
-You are an expert invoice analyzer. Extract all relevant information from the email invoice data provided.
+You are an AI assistant specialized in analyzing and summarizing invoices from email content. Please analyze the following email data and provide a comprehensive summary in JSON format.
 
 Email Subject: {subject}
 Email Body: {body}
 
-Please extract and return a JSON object with the following structure:
+Please provide a summary in the following JSON structure:
 {{
+  "summary": "A detailed 3-4 sentence summary of the invoice including key business context",
+  "keyDetails": {{
+    "vendor": "Name of the vendor/supplier/company that sent the invoice",
+    "invoiceNumber": "Invoice number if found",
+    "dueDate": "Due date if specified",
+    "paymentTerms": "Payment terms if mentioned",
+    "taxAmount": "Tax amount if specified",
+    "subtotal": "Subtotal before tax if specified"
+  }},
   "clientInfo": {{
-    "name": "Client/Company name",
-    "email": "Client email address",
-    "company": "Company name if different from client name"
+    "name": "Company name of the vendor/supplier",
+    "email": "Email address if found in the email",
+    "company": "Full company name or business name",
+    "address": "Company address if available",
+    "phone": "Phone number if available"
   }},
-  "invoiceInfo": {{
-    "invoiceNumber": "Invoice number/ID",
-    "invoiceDate": "YYYY-MM-DD format",
-    "amount": "Total amount as number (no currency symbol)"
-  }},
-  "summary": "A concise summary of the invoice in 2-3 sentences"
+  "lineItems": [
+    {{
+      "description": "Item description",
+      "quantity": "Quantity",
+      "unitPrice": "Unit price",
+      "total": "Line total"
+    }}
+  ],
+  "totalAmount": "Total invoice amount",
+  "invoiceDate": "Invoice date in YYYY-MM-DD format if found",
+  "currency": "Currency if specified",
+  "notes": "Any additional notes, special instructions, or important business context",
+  "businessContext": "Additional business context like project details, service period, or contract information"
 }}
 
 Important:
@@ -44,7 +63,9 @@ Important:
 - If any field is not found, use null
 - Ensure all amounts are numeric values
 - Extract the most accurate information available
-- Focus on essential fields that match the database schema
+- Focus on extracting the most important information that would be useful for accounting and business purposes
+- Make sure to identify the vendor/company that sent the invoice and extract their contact information
+- Analyze both the email subject and body for comprehensive information extraction
 `);
 
 export async function POST(request: NextRequest) {
@@ -59,34 +80,49 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Process the email with LangChain
-    const prompt = await emailInvoicePrompt.format({
+    // Process the email with LangChain - Using same chain approach as PDF processing
+    const chain = emailInvoicePrompt.pipe(llm).pipe(new StringOutputParser());
+    
+    const result = await chain.invoke({
       subject,
       body: emailBody,
     });
 
-    const response = await llm.invoke(prompt);
-    const content = response.content as string;
-
     // Parse the JSON response
     let extractedData;
     try {
-      // Extract JSON from the response (it might be wrapped in markdown)
-      const jsonMatch = content.match(/\{[\s\S]*\}/);
-      if (!jsonMatch) {
-        throw new Error('No JSON found in response');
-      }
-      extractedData = JSON.parse(jsonMatch[0]);
+      extractedData = JSON.parse(result);
     } catch (parseError) {
-      console.error('Error parsing AI response:', parseError);
-      return NextResponse.json(
-        { error: 'Failed to parse AI response' },
-        { status: 500 }
-      );
+      console.error('Failed to parse AI response as JSON:', parseError);
+      // Fallback to a simple structure if parsing fails
+      extractedData = {
+        summary: result,
+        keyDetails: {
+          vendor: 'Unknown',
+          invoiceNumber: 'Not specified',
+          dueDate: 'Not specified',
+          paymentTerms: 'Not specified',
+          taxAmount: null,
+          subtotal: null
+        },
+        clientInfo: {
+          name: 'Unknown',
+          email: null,
+          company: 'Unknown',
+          address: null,
+          phone: null
+        },
+        lineItems: [],
+        totalAmount: 'Unknown',
+        invoiceDate: null,
+        currency: 'USD',
+        notes: 'Summary generated by AI',
+        businessContext: null
+      };
     }
 
-    // Extract data
-    const { clientInfo, invoiceInfo, summary } = extractedData;
+    // Extract data from the detailed summary structure
+    const { clientInfo, keyDetails, totalAmount, invoiceDate, summary } = extractedData;
 
     // Create or update client
     let clientId = null;
@@ -100,7 +136,7 @@ export async function POST(request: NextRequest) {
 
       if (existingClient) {
         // Update existing client
-        const newTotal = (existingClient.total_amount || 0) + (invoiceInfo.amount || 0);
+        const newTotal = (existingClient.total_amount || 0) + (totalAmount || 0);
         const newCount = (existingClient.total_invoices || 0) + 1;
         
         const { data: updatedClient } = await supabase
@@ -108,7 +144,7 @@ export async function POST(request: NextRequest) {
           .update({
             total_amount: newTotal,
             total_invoices: newCount,
-            last_invoice: invoiceInfo.invoiceDate || new Date().toISOString().split('T')[0]
+            last_invoice: invoiceDate || new Date().toISOString().split('T')[0]
           })
           .eq('id', existingClient.id)
           .select()
@@ -126,8 +162,8 @@ export async function POST(request: NextRequest) {
             company: clientInfo.company,
             status: 'active',
             total_invoices: 1,
-            total_amount: invoiceInfo.amount || 0,
-            last_invoice: invoiceInfo.invoiceDate || new Date().toISOString().split('T')[0],
+            total_amount: totalAmount || 0,
+            last_invoice: invoiceDate || new Date().toISOString().split('T')[0],
             created_at: new Date().toISOString()
           })
           .select()
@@ -142,14 +178,14 @@ export async function POST(request: NextRequest) {
       .from('invoices')
       .insert({
         user_id,
-        name: `Email Invoice - ${invoiceInfo.invoiceNumber || 'Unknown'}`,
+        name: `Email Invoice - ${keyDetails?.invoiceNumber || 'Unknown'}`,
         client: clientInfo?.name || 'Unknown',
         client_id: clientId,
-        date: invoiceInfo.invoiceDate || new Date().toISOString().split('T')[0],
-        amount: invoiceInfo.amount || 0,
+        date: invoiceDate || new Date().toISOString().split('T')[0],
+        amount: totalAmount || 0,
         status: 'processed',
         source: 'email',
-        summary: summary,
+        summary: extractedData, // Store the full detailed summary object
         file_url: null, // No PDF for email invoices
         created_at: new Date().toISOString()
       })
@@ -173,7 +209,7 @@ export async function POST(request: NextRequest) {
         recipient: clientInfo?.email || 'Unknown',
         subject: subject,
         client: clientInfo?.name || 'Unknown',
-        invoice_name: `Email Invoice - ${invoiceInfo.invoiceNumber || 'Unknown'}`,
+        invoice_name: `Email Invoice - ${keyDetails?.invoiceNumber || 'Unknown'}`,
         status: 'delivered',
         date: new Date().toISOString().split('T')[0],
         time: new Date().toISOString().split('T')[1].split('.')[0],

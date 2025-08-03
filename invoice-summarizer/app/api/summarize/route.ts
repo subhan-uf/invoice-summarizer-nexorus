@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabaseClient';
 import { summarizeInvoice } from '../../../lib/summarizer';
 import { sendSummaryEmail } from '../../../lib/emailService';
-import { extractTextFromPDF } from '../../../lib/utils';
+import { extractTextFromPDF } from '../../../lib/server-utils';
 console.log('[summarize API] Authenticated user:', supabase.auth.getUser());
 
 export async function POST(request: NextRequest) {

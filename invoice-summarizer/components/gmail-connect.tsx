@@ -18,6 +18,7 @@ export default function GmailConnect({ className = "", variant = "card" }: Gmail
   const [connecting, setConnecting] = useState(false);
   const [userEmail, setUserEmail] = useState<string | null>(null);
 
+
   useEffect(() => {
     checkGmailConnection();
   }, []);
@@ -41,12 +42,15 @@ export default function GmailConnect({ className = "", variant = "card" }: Gmail
 
       setIsConnected(!!gmailTokens);
       setUserEmail(user.email || null);
+      
       setLoading(false);
     } catch (error) {
       console.error('Error checking Gmail connection:', error);
       setLoading(false);
     }
   };
+
+
 
   const handleConnectGmail = () => {
     setConnecting(true);

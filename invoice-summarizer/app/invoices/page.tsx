@@ -131,6 +131,8 @@ export default function InvoicesPage() {
   const [invoiceToEmail, setInvoiceToEmail] = useState<any>(null);
   const [additionalRecipient, setAdditionalRecipient] = useState("");
   const [sendingEmail, setSendingEmail] = useState(false);
+  const [checkingEmail, setCheckingEmail] = useState(false);
+  const [isGmailConnected, setIsGmailConnected] = useState(false);
 
   useEffect(() => {
     setMounted(true);
@@ -191,7 +193,62 @@ export default function InvoicesPage() {
     };
 
     setupRealtime();
+
+    // Check Gmail connection status
+    const checkGmailConnection = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const { data: gmailTokens } = await supabase
+          .from('gmail_tokens')
+          .select('*')
+          .eq('user_id', user.id)
+          .single();
+        setIsGmailConnected(!!gmailTokens);
+      }
+    };
+    checkGmailConnection();
   }, [mounted]);
+
+  const handleCheckEmail = async () => {
+    try {
+      setCheckingEmail(true);
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        toast.error("Please log in to check email");
+        return;
+      }
+
+      // Get the current session token
+      const { data: { session } } = await supabase.auth.getSession();
+      const token = session?.access_token;
+      
+      if (!token) {
+        toast.error("Please log in to check email");
+        return;
+      }
+
+      // Send request to n8n webhook
+      const response = await fetch('/api/scan-gmail', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+
+      if (response.ok) {
+        toast.success("Email scan initiated successfully! New invoices will appear shortly.");
+      } else {
+        const errorData = await response.json();
+        toast.error(errorData.error || "Failed to initiate email scan");
+      }
+    } catch (error) {
+      console.error('Error checking email:', error);
+      toast.error("Failed to check email. Please try again.");
+    } finally {
+      setCheckingEmail(false);
+    }
+  };
 
   const filteredInvoices = mounted ? invoices.filter((invoice) => {
     const matchesSearch = invoice.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -503,6 +560,16 @@ export default function InvoicesPage() {
           <div className="flex gap-3">
             <Button
               variant="bordered"
+              color="secondary"
+              startContent={<InboxIcon className="w-4 h-4" />}
+              onPress={handleCheckEmail}
+              isLoading={checkingEmail}
+              isDisabled={!isGmailConnected}
+            >
+              Check Email
+            </Button>
+            <Button
+              variant="bordered"
               color="primary"
               startContent={<DocumentArrowDownIcon className="w-4 h-4" />}
             >
@@ -787,13 +854,15 @@ export default function InvoicesPage() {
                               Generate AI Summary
                             </DropdownItem>
                           )}
-                          <DropdownItem
-                            key="download"
-                            startContent={<DocumentArrowDownIcon className="w-4 h-4" />}
-                            onClick={() => window.open(invoice.file_url, "_blank")}
-                          >
-                            Download PDF
-                          </DropdownItem>
+                          {invoice.source !== 'email' && invoice.file_url && (
+                            <DropdownItem
+                              key="download"
+                              startContent={<DocumentArrowDownIcon className="w-4 h-4" />}
+                              onClick={() => window.open(invoice.file_url, "_blank")}
+                            >
+                              Download PDF
+                            </DropdownItem>
+                          )}
                           <DropdownItem
                             key="email"
                             startContent={<EnvelopeIcon className="w-4 h-4" />}

@@ -16,7 +16,6 @@ import {
   CheckCircleIcon,
   ExclamationTriangleIcon,
   ChartBarIcon,
-  TrendingUpIcon,
   SparklesIcon,
   BellIcon,
   InboxIcon,
@@ -133,6 +132,8 @@ export default function DashboardPage() {
   const [error, setError] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
   const [showMessage, setShowMessage] = useState(false);
+  const [checkingEmail, setCheckingEmail] = useState(false);
+  const [isGmailConnected, setIsGmailConnected] = useState(false);
 
   useEffect(() => {
     // Check for URL parameters for success/error messages
@@ -180,7 +181,62 @@ export default function DashboardPage() {
       setLoading(false);
     };
     fetchAll();
+
+    // Check Gmail connection status
+    const checkGmailConnection = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const { data: gmailTokens } = await supabase
+          .from('gmail_tokens')
+          .select('*')
+          .eq('user_id', user.id)
+          .single();
+        setIsGmailConnected(!!gmailTokens);
+      }
+    };
+    checkGmailConnection();
   }, []);
+
+  const handleCheckEmail = async () => {
+    try {
+      setCheckingEmail(true);
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        toast.error("Please log in to check email");
+        return;
+      }
+
+      // Get the current session token
+      const { data: { session } } = await supabase.auth.getSession();
+      const token = session?.access_token;
+      
+      if (!token) {
+        toast.error("Please log in to check email");
+        return;
+      }
+
+      // Send request to our local API route (which will proxy to n8n)
+      const response = await fetch('/api/scan-gmail', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+
+      if (response.ok) {
+        toast.success("Email scan initiated successfully! New invoices will appear shortly.");
+      } else {
+        const errorData = await response.json();
+        toast.error(errorData.error || "Failed to initiate email scan");
+      }
+    } catch (error) {
+      console.error('Error checking email:', error);
+      toast.error("Failed to check email. Please try again.");
+    } finally {
+      setCheckingEmail(false);
+    }
+  };
 
   // Stats
   const totalInvoices = invoices.length;
@@ -195,8 +251,15 @@ export default function DashboardPage() {
     processing: invoices.filter(i => i.status === "processing").length,
     failed: invoices.filter(i => i.status === "failed").length,
     uploaded: invoices.filter(i => i.status === "uploaded").length,
+    emailDetected: invoices.filter(i => i.source === "email").length,
+    manualUploads: invoices.filter(i => i.source === "upload").length,
     successRate: totalInvoices > 0 ? Math.round((invoices.filter(i => i.status === "processed").length / totalInvoices) * 100) : 0,
-    avgProcessingTime: "2.3s" // This would need to be calculated from actual processing times
+    emailSuccessRate: emailDetected > 0 ? Math.round((invoices.filter(i => i.source === "email" && i.status === "processed").length / emailDetected) * 100) : 0,
+    uploadSuccessRate: invoices.filter(i => i.source === "upload").length > 0 ? Math.round((invoices.filter(i => i.source === "upload" && i.status === "processed").length / invoices.filter(i => i.source === "upload").length) * 100) : 0,
+    avgProcessingTime: "2.3s", // This would need to be calculated from actual processing times
+    totalAmount: invoices.reduce((sum, i) => sum + (i.amount || 0), 0),
+    emailAmount: invoices.filter(i => i.source === "email").reduce((sum, i) => sum + (i.amount || 0), 0),
+    uploadAmount: invoices.filter(i => i.source === "upload").reduce((sum, i) => sum + (i.amount || 0), 0)
   };
 
   // Recent activity (combine invoices and emails, sort by created_at/date)
@@ -249,6 +312,32 @@ export default function DashboardPage() {
 
         {/* Gmail Connection Status */}
         <GmailConnect variant="card" />
+
+        {/* Check Email Button */}
+        <Card className="bg-content1/50 backdrop-blur-sm border-1 border-divider/50">
+          <CardBody className="p-6">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                <div className="bg-secondary/10 rounded-full p-3">
+                  <InboxIcon className="w-6 h-6 text-secondary" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-semibold">Email Detection</h3>
+                  <p className="text-default-600">Scan your Gmail for invoice emails</p>
+                </div>
+              </div>
+              <Button
+                color="secondary"
+                startContent={<InboxIcon className="w-4 h-4" />}
+                onPress={handleCheckEmail}
+                isLoading={checkingEmail}
+                isDisabled={!isGmailConnected}
+              >
+                Check Email
+              </Button>
+            </div>
+          </CardBody>
+        </Card>
 
         {/* Success/Error Messages */}
         {showMessage && (successMessage || error) && (
@@ -462,13 +551,25 @@ export default function DashboardPage() {
                       </span>
                     </div>
                     <div className="flex items-center justify-between text-sm">
-                      <span>Success Rate</span>
+                      <span>Overall Success Rate</span>
                       <span className={`font-medium ${processingStats.successRate >= 90 ? 'text-success' : processingStats.successRate >= 70 ? 'text-warning' : 'text-danger'}`}>
                         {processingStats.successRate}%
                       </span>
                     </div>
                     <div className="flex items-center justify-between text-sm">
-                      <span>Processed Today</span>
+                      <span>Email Success Rate</span>
+                      <span className={`font-medium ${processingStats.emailSuccessRate >= 90 ? 'text-success' : processingStats.emailSuccessRate >= 70 ? 'text-warning' : 'text-danger'}`}>
+                        {processingStats.emailSuccessRate}%
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between text-sm">
+                      <span>Upload Success Rate</span>
+                      <span className={`font-medium ${processingStats.uploadSuccessRate >= 90 ? 'text-success' : processingStats.uploadSuccessRate >= 70 ? 'text-warning' : 'text-danger'}`}>
+                        {processingStats.uploadSuccessRate}%
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between text-sm">
+                      <span>Total Processed</span>
                       <span className="font-medium">{processingStats.processed}</span>
                     </div>
                     <div className="flex items-center justify-between text-sm">
@@ -495,11 +596,55 @@ export default function DashboardPage() {
             </div>
           </CardHeader>
           <CardBody className="pt-0">
-            <div className="h-64 bg-gradient-to-br from-primary/10 via-secondary/10 to-primary/10 rounded-lg border-1 border-divider/50 flex items-center justify-center">
-              <div className="text-center">
-                <ChartBarIcon className="w-16 h-16 mx-auto text-primary mb-4" />
-                <p className="text-default-600 font-medium">Processing Analytics</p>
-                <p className="text-sm text-default-500">Email detection, uploads, and output tracking</p>
+            <div className="space-y-6">
+              {/* Processing Breakdown */}
+              <div className="grid grid-cols-2 gap-4">
+                <div className="bg-success/10 rounded-lg p-4 border border-success/20">
+                  <div className="flex items-center gap-2 mb-2">
+                    <InboxIcon className="w-4 h-4 text-success" />
+                    <span className="text-sm font-medium text-success">Email Detection</span>
+                  </div>
+                  <div className="text-2xl font-bold text-success">{processingStats.emailDetected}</div>
+                  <div className="text-xs text-default-500">
+                    ${processingStats.emailAmount.toLocaleString()} total
+                  </div>
+                </div>
+                <div className="bg-primary/10 rounded-lg p-4 border border-primary/20">
+                  <div className="flex items-center gap-2 mb-2">
+                    <CloudArrowUpIcon className="w-4 h-4 text-primary" />
+                    <span className="text-sm font-medium text-primary">Manual Uploads</span>
+                  </div>
+                  <div className="text-2xl font-bold text-primary">{processingStats.manualUploads}</div>
+                  <div className="text-xs text-default-500">
+                    ${processingStats.uploadAmount.toLocaleString()} total
+                  </div>
+                </div>
+              </div>
+
+              {/* Performance Metrics */}
+              <div className="grid grid-cols-3 gap-4">
+                <div className="text-center">
+                  <div className="text-lg font-bold text-success">{processingStats.successRate}%</div>
+                  <div className="text-xs text-default-500">Overall Success</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-lg font-bold text-secondary">{processingStats.emailSuccessRate}%</div>
+                  <div className="text-xs text-default-500">Email Success</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-lg font-bold text-primary">{processingStats.uploadSuccessRate}%</div>
+                  <div className="text-xs text-default-500">Upload Success</div>
+                </div>
+              </div>
+
+              {/* Total Amount */}
+              <div className="bg-gradient-to-r from-success/10 to-primary/10 rounded-lg p-4 border border-divider/50">
+                <div className="text-center">
+                  <div className="text-2xl font-bold text-success">
+                    ${processingStats.totalAmount.toLocaleString()}
+                  </div>
+                  <div className="text-sm text-default-500">Total Invoice Value</div>
+                </div>
               </div>
             </div>
           </CardBody>

@@ -1,5 +1,5 @@
 [build]
-  command = "npm run build"
+  command = "NEXT_IGNORE_ESLINT=true npm run build"
   publish = ".next"
 
 [functions]

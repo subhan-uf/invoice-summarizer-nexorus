@@ -52,65 +52,6 @@ import { supabase } from "@/lib/supabaseClient";
 import { generateSummaryText } from "@/lib/utils";
 import GmailConnect from "@/components/gmail-connect";
 
-// Mock data
-const invoices = [
-  {
-    id: 1,
-    name: "INV-2024-001.pdf",
-    client: "TechCorp",
-    date: "2024-01-15",
-    status: "processed",
-    amount: "$2,450.00",
-    size: "1.2 MB",
-    source: "email",
-    summary: "Available",
-  },
-  {
-    id: 2,
-    name: "Invoice_StartupXYZ_Jan.pdf",
-    client: "StartupXYZ",
-    date: "2024-01-14",
-    status: "processing",
-    amount: "$890.00",
-    size: "856 KB",
-    source: "upload",
-    summary: "Processing",
-  },
-  {
-    id: 3,
-    name: "INV-2024-003.pdf",
-    client: "Freelance Client",
-    date: "2024-01-13",
-    status: "failed",
-    amount: "$1,200.00",
-    size: "2.1 MB",
-    source: "email",
-    summary: "Failed",
-  },
-  {
-    id: 4,
-    name: "Wilson_Consulting_Invoice.pdf",
-    client: "Wilson Consulting",
-    date: "2024-01-12",
-    status: "processed",
-    amount: "$3,750.00",
-    size: "1.8 MB",
-    source: "upload",
-    summary: "Available",
-  },
-  {
-    id: 5,
-    name: "Design_Studio_Invoice.pdf",
-    client: "Design Studio Pro",
-    date: "2024-01-11",
-    status: "processed",
-    amount: "$1,650.00",
-    size: "1.5 MB",
-    source: "email",
-    summary: "Available",
-  },
-];
-
 const statusColors = {
   processed: "success",
   processing: "warning",
@@ -135,7 +76,7 @@ export default function InvoicesPage() {
   const [statusFilter, setStatusFilter] = useState("all");
   const [sourceFilter, setSourceFilter] = useState("all");
   const { isOpen, onOpen, onClose } = useDisclosure();
-  const [_invoices, setInvoices] = useState<any[]>([]);
+  const [invoices, setInvoices] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [uploading, setUploading] = useState(false);
@@ -496,7 +437,7 @@ export default function InvoicesPage() {
 
   const handleDeleteInvoice = async (invoiceId: string) => {
     // Find the invoice to show in confirmation modal
-    const invoice = invoices.find((inv) => inv.id === invoiceId);
+    const invoice = invoices.find((inv) => inv.id.toString() === invoiceId);
 
     if (invoice) {
       setInvoiceToDelete(invoice);

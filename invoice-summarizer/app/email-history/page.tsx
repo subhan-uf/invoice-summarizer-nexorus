@@ -4,12 +4,22 @@ import { useState, useEffect } from "react";
 import { Card, CardBody, CardHeader } from "@heroui/card";
 import { Button } from "@heroui/button";
 import { Input } from "@heroui/input";
-import { Table, TableHeader, TableColumn, TableBody, TableRow, TableCell } from "@heroui/table";
+import {
+  Table,
+  TableHeader,
+  TableColumn,
+  TableBody,
+  TableRow,
+  TableCell,
+} from "@heroui/table";
 import { Chip } from "@heroui/chip";
-import { Dropdown, DropdownTrigger, DropdownMenu, DropdownItem } from "@heroui/dropdown";
-import { title, subtitle } from "@/components/primitives";
-import DashboardLayout from "@/components/dashboard-layout";
-import { 
+import {
+  Dropdown,
+  DropdownTrigger,
+  DropdownMenu,
+  DropdownItem,
+} from "@heroui/dropdown";
+import {
   EnvelopeIcon,
   MagnifyingGlassIcon,
   FunnelIcon,
@@ -17,8 +27,11 @@ import {
   ArrowPathIcon,
   CheckCircleIcon,
   ExclamationTriangleIcon,
-  ClockIcon
+  ClockIcon,
 } from "@heroicons/react/24/outline";
+
+import { title, subtitle } from "@/components/primitives";
+import DashboardLayout from "@/components/dashboard-layout";
 import { supabase } from "@/lib/supabaseClient";
 
 const statusColors = {
@@ -45,10 +58,14 @@ export default function EmailHistoryPage() {
     const fetchEmails = async () => {
       setLoading(true);
       setError("");
-      const { data: { user } } = await supabase.auth.getUser();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
       if (!user) {
         setError("Not authenticated");
         setLoading(false);
+
         return;
       }
       const { data, error } = await supabase
@@ -56,6 +73,7 @@ export default function EmailHistoryPage() {
         .select("*")
         .eq("user_id", user.id)
         .order("date", { ascending: false });
+
       if (error) {
         setError(error.message);
       } else {
@@ -63,27 +81,32 @@ export default function EmailHistoryPage() {
       }
       setLoading(false);
     };
+
     fetchEmails();
   }, []);
 
   const filteredEmails = emails.filter((email) => {
-    const matchesSearch = email.recipient?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         email.invoiceName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         email.client?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         email.subject?.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesStatus = statusFilter === "all" || email.status === statusFilter;
+    const matchesSearch =
+      email.recipient?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      email.invoiceName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      email.client?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      email.subject?.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesStatus =
+      statusFilter === "all" || email.status === statusFilter;
     const matchesDate = dateFilter === "all" || email.date === dateFilter;
+
     return matchesSearch && matchesStatus && matchesDate;
   });
 
   const getStatusChip = (status: string) => {
     const StatusIcon = statusIcons[status as keyof typeof statusIcons];
+
     return (
       <Chip
-        size="sm"
         color={statusColors[status as keyof typeof statusColors] as any}
-        variant="flat"
+        size="sm"
         startContent={<StatusIcon className="w-3 h-3" />}
+        variant="flat"
       >
         {status.charAt(0).toUpperCase() + status.slice(1)}
       </Chip>
@@ -107,7 +130,9 @@ export default function EmailHistoryPage() {
             <CardBody className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-default-600">Total Sent</p>
+                  <p className="text-sm font-medium text-default-600">
+                    Total Sent
+                  </p>
                   <p className="text-2xl font-bold">{emails.length}</p>
                 </div>
                 <EnvelopeIcon className="w-8 h-8 text-primary" />
@@ -118,8 +143,12 @@ export default function EmailHistoryPage() {
             <CardBody className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-default-600">Delivered</p>
-                  <p className="text-2xl font-bold">{emails.filter(e => e.status === 'delivered').length}</p>
+                  <p className="text-sm font-medium text-default-600">
+                    Delivered
+                  </p>
+                  <p className="text-2xl font-bold">
+                    {emails.filter((e) => e.status === "delivered").length}
+                  </p>
                 </div>
                 <CheckCircleIcon className="w-8 h-8 text-success" />
               </div>
@@ -130,7 +159,9 @@ export default function EmailHistoryPage() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-default-600">Failed</p>
-                  <p className="text-2xl font-bold">{emails.filter(e => e.status === 'failed').length}</p>
+                  <p className="text-2xl font-bold">
+                    {emails.filter((e) => e.status === "failed").length}
+                  </p>
                 </div>
                 <ExclamationTriangleIcon className="w-8 h-8 text-danger" />
               </div>
@@ -140,8 +171,19 @@ export default function EmailHistoryPage() {
             <CardBody className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-default-600">Success Rate</p>
-                  <p className="text-2xl font-bold">{emails.length > 0 ? ((emails.filter(e => e.status === 'delivered').length / emails.length) * 100).toFixed(1) + '%' : '0%'}</p>
+                  <p className="text-sm font-medium text-default-600">
+                    Success Rate
+                  </p>
+                  <p className="text-2xl font-bold">
+                    {emails.length > 0
+                      ? (
+                          (emails.filter((e) => e.status === "delivered")
+                            .length /
+                            emails.length) *
+                          100
+                        ).toFixed(1) + "%"
+                      : "0%"}
+                  </p>
                 </div>
                 <CheckCircleIcon className="w-8 h-8 text-success" />
               </div>
@@ -156,24 +198,32 @@ export default function EmailHistoryPage() {
               <div className="flex-1">
                 <Input
                   placeholder="Search emails..."
-                  startContent={<MagnifyingGlassIcon className="w-4 h-4 text-default-400" />}
+                  startContent={
+                    <MagnifyingGlassIcon className="w-4 h-4 text-default-400" />
+                  }
                   value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
                   variant="bordered"
+                  onChange={(e) => setSearchQuery(e.target.value)}
                 />
               </div>
               <Dropdown>
                 <DropdownTrigger>
                   <Button
-                    variant="bordered"
                     startContent={<FunnelIcon className="w-4 h-4" />}
+                    variant="bordered"
                   >
-                    Status: {statusFilter === "all" ? "All" : statusFilter.charAt(0).toUpperCase() + statusFilter.slice(1)}
+                    Status:{" "}
+                    {statusFilter === "all"
+                      ? "All"
+                      : statusFilter.charAt(0).toUpperCase() +
+                        statusFilter.slice(1)}
                   </Button>
                 </DropdownTrigger>
                 <DropdownMenu
                   selectedKeys={[statusFilter]}
-                  onSelectionChange={(keys) => setStatusFilter(Array.from(keys)[0] as string)}
+                  onSelectionChange={(keys) =>
+                    setStatusFilter(Array.from(keys)[0] as string)
+                  }
                 >
                   <DropdownItem key="all">All</DropdownItem>
                   <DropdownItem key="delivered">Delivered</DropdownItem>
@@ -184,15 +234,17 @@ export default function EmailHistoryPage() {
               <Dropdown>
                 <DropdownTrigger>
                   <Button
-                    variant="bordered"
                     startContent={<FunnelIcon className="w-4 h-4" />}
+                    variant="bordered"
                   >
                     Date: {dateFilter === "all" ? "All" : dateFilter}
                   </Button>
                 </DropdownTrigger>
                 <DropdownMenu
                   selectedKeys={[dateFilter]}
-                  onSelectionChange={(keys) => setDateFilter(Array.from(keys)[0] as string)}
+                  onSelectionChange={(keys) =>
+                    setDateFilter(Array.from(keys)[0] as string)
+                  }
                 >
                   <DropdownItem key="all">All Dates</DropdownItem>
                   <DropdownItem key="2024-01-15">Today</DropdownItem>
@@ -224,63 +276,85 @@ export default function EmailHistoryPage() {
               </TableHeader>
               <TableBody>
                 {loading ? (
-                  <TableRow><TableCell colSpan={7}><div className="text-center py-8">Loading email history...</div></TableCell></TableRow>
-                ) : error ? (
-                  <TableRow><TableCell colSpan={7}><div className="text-danger text-center py-8">{error}</div></TableCell></TableRow>
-                ) : filteredEmails.length === 0 ? (
-                  <TableRow><TableCell colSpan={7}><div className="text-center py-8">No email history found.</div></TableCell></TableRow>
-                ) : filteredEmails.map((email) => (
-                  <TableRow key={email.id}>
-                    <TableCell>
-                      <div>
-                        <p className="font-medium">{email.date}</p>
-                        <p className="text-sm text-default-600">{email.time}</p>
+                  <TableRow>
+                    <TableCell colSpan={7}>
+                      <div className="text-center py-8">
+                        Loading email history...
                       </div>
-                    </TableCell>
-                    <TableCell>{email.recipient}</TableCell>
-                    <TableCell>{email.invoiceName}</TableCell>
-                    <TableCell>{email.client}</TableCell>
-                    <TableCell>
-                      <div className="max-w-xs truncate">
-                        {email.subject}
-                      </div>
-                    </TableCell>
-                    <TableCell>{getStatusChip(email.status)}</TableCell>
-                    <TableCell>
-                      <Dropdown>
-                        <DropdownTrigger>
-                          <Button
-                            isIconOnly
-                            size="sm"
-                            variant="light"
-                          >
-                            <EllipsisVerticalIcon className="w-4 h-4" />
-                          </Button>
-                        </DropdownTrigger>
-                        <DropdownMenu>
-                          <DropdownItem
-                            key="resend"
-                            startContent={<ArrowPathIcon className="w-4 h-4" />}
-                          >
-                            Resend
-                          </DropdownItem>
-                          <DropdownItem
-                            key="view"
-                            startContent={<EnvelopeIcon className="w-4 h-4" />}
-                          >
-                            View Email
-                          </DropdownItem>
-                          <DropdownItem
-                            key="details"
-                            startContent={<EnvelopeIcon className="w-4 h-4" />}
-                          >
-                            Delivery Details
-                          </DropdownItem>
-                        </DropdownMenu>
-                      </Dropdown>
                     </TableCell>
                   </TableRow>
-                ))}
+                ) : error ? (
+                  <TableRow>
+                    <TableCell colSpan={7}>
+                      <div className="text-danger text-center py-8">
+                        {error}
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ) : filteredEmails.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={7}>
+                      <div className="text-center py-8">
+                        No email history found.
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  filteredEmails.map((email) => (
+                    <TableRow key={email.id}>
+                      <TableCell>
+                        <div>
+                          <p className="font-medium">{email.date}</p>
+                          <p className="text-sm text-default-600">
+                            {email.time}
+                          </p>
+                        </div>
+                      </TableCell>
+                      <TableCell>{email.recipient}</TableCell>
+                      <TableCell>{email.invoiceName}</TableCell>
+                      <TableCell>{email.client}</TableCell>
+                      <TableCell>
+                        <div className="max-w-xs truncate">{email.subject}</div>
+                      </TableCell>
+                      <TableCell>{getStatusChip(email.status)}</TableCell>
+                      <TableCell>
+                        <Dropdown>
+                          <DropdownTrigger>
+                            <Button isIconOnly size="sm" variant="light">
+                              <EllipsisVerticalIcon className="w-4 h-4" />
+                            </Button>
+                          </DropdownTrigger>
+                          <DropdownMenu>
+                            <DropdownItem
+                              key="resend"
+                              startContent={
+                                <ArrowPathIcon className="w-4 h-4" />
+                              }
+                            >
+                              Resend
+                            </DropdownItem>
+                            <DropdownItem
+                              key="view"
+                              startContent={
+                                <EnvelopeIcon className="w-4 h-4" />
+                              }
+                            >
+                              View Email
+                            </DropdownItem>
+                            <DropdownItem
+                              key="details"
+                              startContent={
+                                <EnvelopeIcon className="w-4 h-4" />
+                              }
+                            >
+                              Delivery Details
+                            </DropdownItem>
+                          </DropdownMenu>
+                        </Dropdown>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
               </TableBody>
             </Table>
           </CardBody>
@@ -288,4 +362,4 @@ export default function EmailHistoryPage() {
       </div>
     </DashboardLayout>
   );
-} 
+}

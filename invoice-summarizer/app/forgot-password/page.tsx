@@ -1,7 +1,8 @@
 import { Link } from "@heroui/link";
 import { Button } from "@heroui/button";
-import { Card, CardBody, CardHeader } from "@heroui/card";
+import { Card, CardBody } from "@heroui/card";
 import { Input } from "@heroui/input";
+
 import { title, subtitle } from "@/components/primitives";
 
 export default function ForgotPasswordPage() {
@@ -11,7 +12,8 @@ export default function ForgotPasswordPage() {
         <div className="text-center mb-8">
           <h1 className={title({ size: "lg" })}>Reset Password</h1>
           <p className={subtitle({ class: "mt-2" })}>
-            Enter your email address and we'll send you a link to reset your password
+            Enter your email address and we&apos;ll send you a link to reset
+            your password
           </p>
         </div>
 
@@ -20,19 +22,19 @@ export default function ForgotPasswordPage() {
             <form className="space-y-6">
               <div>
                 <Input
-                  type="email"
+                  isRequired
                   label="Email"
                   placeholder="Enter your email address"
+                  type="email"
                   variant="bordered"
-                  isRequired
                 />
               </div>
 
               <Button
-                type="submit"
                 className="w-full"
                 color="primary"
                 size="lg"
+                type="submit"
               >
                 Send Reset Link
               </Button>
@@ -41,7 +43,7 @@ export default function ForgotPasswordPage() {
             <div className="text-center mt-6">
               <p className="text-sm text-default-600">
                 Remember your password?{" "}
-                <Link href="/login" className="text-primary">
+                <Link className="text-primary" href="/login">
                   Sign in
                 </Link>
               </p>
@@ -51,4 +53,4 @@ export default function ForgotPasswordPage() {
       </div>
     </div>
   );
-} 
+}

@@ -2,7 +2,8 @@ export type SiteConfig = typeof siteConfig;
 
 export const siteConfig = {
   name: "AI Invoice Summarizer by Subhan",
-  description: "Transform your invoices into clear, actionable summaries in seconds with AI-powered analysis.",
+  description:
+    "Transform your invoices into clear, actionable summaries in seconds with AI-powered analysis.",
   navItems: [
     {
       label: "Home",

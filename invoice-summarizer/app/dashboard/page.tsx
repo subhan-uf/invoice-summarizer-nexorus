@@ -2,40 +2,36 @@
 
 import { Card, CardBody, CardHeader } from "@heroui/card";
 import { Button } from "@heroui/button";
-import { Chip } from "@heroui/chip";
 import { Progress } from "@heroui/progress";
-import { title, subtitle } from "@/components/primitives";
-import DashboardLayout from "@/components/dashboard-layout";
-import { 
+import {
   DocumentTextIcon,
-  UserGroupIcon,
   EnvelopeIcon,
-  ArrowUpIcon,
-  ArrowDownIcon,
   ClockIcon,
   CheckCircleIcon,
   ExclamationTriangleIcon,
-  ChartBarIcon,
   SparklesIcon,
   BellIcon,
   InboxIcon,
   DocumentArrowDownIcon,
-  CloudArrowUpIcon
+  CloudArrowUpIcon,
 } from "@heroicons/react/24/outline";
 import { useEffect, useState } from "react";
-import { supabase } from "@/lib/supabaseClient";
-import GmailConnect from "@/components/gmail-connect";
 import toast from "react-hot-toast";
 
+import { title, subtitle } from "@/components/primitives";
+import DashboardLayout from "@/components/dashboard-layout";
+import { supabase } from "@/lib/supabaseClient";
+import GmailConnect from "@/components/gmail-connect";
+
 // Mock data
-const stats = [
+const _stats = [
   {
     title: "Total Invoices",
     value: "1,247",
     change: "+12.5%",
     changeType: "positive",
     icon: DocumentTextIcon,
-    color: "primary"
+    color: "primary",
   },
   {
     title: "Email Detected",
@@ -43,7 +39,7 @@ const stats = [
     change: "+8.2%",
     changeType: "positive",
     icon: InboxIcon,
-    color: "secondary"
+    color: "secondary",
   },
   {
     title: "PDF Downloads",
@@ -51,7 +47,7 @@ const stats = [
     change: "+23.1%",
     changeType: "positive",
     icon: DocumentArrowDownIcon,
-    color: "success"
+    color: "success",
   },
   {
     title: "Emails Sent",
@@ -59,18 +55,18 @@ const stats = [
     change: "+15.3%",
     changeType: "positive",
     icon: EnvelopeIcon,
-    color: "warning"
-  }
+    color: "warning",
+  },
 ];
 
-const recentActivity = [
+const _recentActivity = [
   {
     id: 1,
     type: "email",
     action: "Invoice detected from email",
     description: "INV-2024-001 from TechCorp",
     time: "2 minutes ago",
-    status: "success"
+    status: "success",
   },
   {
     id: 2,
@@ -78,7 +74,7 @@ const recentActivity = [
     action: "PDF summary downloaded",
     description: "Wilson Consulting Invoice",
     time: "5 minutes ago",
-    status: "success"
+    status: "success",
   },
   {
     id: 3,
@@ -86,7 +82,7 @@ const recentActivity = [
     action: "Summary sent via email",
     description: "To sarah@techcorp.com",
     time: "1 hour ago",
-    status: "success"
+    status: "success",
   },
   {
     id: 4,
@@ -94,8 +90,8 @@ const recentActivity = [
     action: "Manual upload processed",
     description: "Design Studio Invoice",
     time: "2 hours ago",
-    status: "success"
-  }
+    status: "success",
+  },
 ];
 
 const getStatusIcon = (status: string) => {
@@ -127,7 +123,7 @@ const getStatusColor = (status: string) => {
 export default function DashboardPage() {
   const [invoices, setInvoices] = useState<any[]>([]);
   const [emails, setEmails] = useState<any[]>([]);
-  const [clients, setClients] = useState<any[]>([]);
+  const [_clients, setClients] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
@@ -138,17 +134,17 @@ export default function DashboardPage() {
   useEffect(() => {
     // Check for URL parameters for success/error messages
     const urlParams = new URLSearchParams(window.location.search);
-    const success = urlParams.get('success');
-    const errorMsg = urlParams.get('error');
-    const message = urlParams.get('message');
+    const success = urlParams.get("success");
+    const errorMsg = urlParams.get("error");
+    const message = urlParams.get("message");
 
-    if (success === 'gmail_connected' && message) {
+    if (success === "gmail_connected" && message) {
       setSuccessMessage(decodeURIComponent(message));
       setShowMessage(true);
       toast.success(decodeURIComponent(message));
       // Clear URL parameters
       window.history.replaceState({}, document.title, window.location.pathname);
-    } else if (errorMsg === 'gmail_connection_failed' && message) {
+    } else if (errorMsg === "gmail_connection_failed" && message) {
       setError(decodeURIComponent(message));
       setShowMessage(true);
       toast.error(decodeURIComponent(message));
@@ -159,10 +155,14 @@ export default function DashboardPage() {
     const fetchAll = async () => {
       setLoading(true);
       setError("");
-      const { data: { user } } = await supabase.auth.getUser();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
       if (!user) {
         setError("Not authenticated");
         setLoading(false);
+
         return;
       }
       const [invRes, emailRes, clientRes] = await Promise.all([
@@ -170,9 +170,16 @@ export default function DashboardPage() {
         supabase.from("email_history").select("*").eq("user_id", user.id),
         supabase.from("clients").select("*").eq("user_id", user.id),
       ]);
+
       if (invRes.error || emailRes.error || clientRes.error) {
-        setError(invRes.error?.message || emailRes.error?.message || clientRes.error?.message || "Unknown error");
+        setError(
+          invRes.error?.message ||
+            emailRes.error?.message ||
+            clientRes.error?.message ||
+            "Unknown error",
+        );
         setLoading(false);
+
         return;
       }
       setInvoices(invRes.data || []);
@@ -180,58 +187,74 @@ export default function DashboardPage() {
       setClients(clientRes.data || []);
       setLoading(false);
     };
+
     fetchAll();
 
     // Check Gmail connection status
     const checkGmailConnection = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
       if (user) {
         const { data: gmailTokens } = await supabase
-          .from('gmail_tokens')
-          .select('*')
-          .eq('user_id', user.id)
+          .from("gmail_tokens")
+          .select("*")
+          .eq("user_id", user.id)
           .single();
+
         setIsGmailConnected(!!gmailTokens);
       }
     };
+
     checkGmailConnection();
   }, []);
 
   const handleCheckEmail = async () => {
     try {
       setCheckingEmail(true);
-      const { data: { user } } = await supabase.auth.getUser();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
       if (!user) {
         toast.error("Please log in to check email");
+
         return;
       }
 
       // Get the current session token
-      const { data: { session } } = await supabase.auth.getSession();
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
       const token = session?.access_token;
-      
+
       if (!token) {
         toast.error("Please log in to check email");
+
         return;
       }
 
       // Send request to our local API route (which will proxy to n8n)
-      const response = await fetch('/api/scan-gmail', {
-        method: 'POST',
+      const response = await fetch("/api/scan-gmail", {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
         },
       });
 
       if (response.ok) {
-        toast.success("Email scan initiated successfully! New invoices will appear shortly.");
+        toast.success(
+          "Email scan initiated successfully! New invoices will appear shortly.",
+        );
       } else {
         const errorData = await response.json();
+
         toast.error(errorData.error || "Failed to initiate email scan");
       }
     } catch (error) {
-      console.error('Error checking email:', error);
+      console.error("Error checking email:", error);
       toast.error("Failed to check email. Please try again.");
     } finally {
       setCheckingEmail(false);
@@ -240,47 +263,91 @@ export default function DashboardPage() {
 
   // Stats
   const totalInvoices = invoices.length;
-  const emailDetected = invoices.filter(i => i.source === "email").length;
+  const emailDetected = invoices.filter((i) => i.source === "email").length;
   const pdfDownloads = emails.length; // or use a separate downloads table if you have one
   const emailsSent = emails.length;
 
   // Processing Performance Metrics
   const processingStats = {
     total: totalInvoices,
-    processed: invoices.filter(i => i.status === "processed").length,
-    processing: invoices.filter(i => i.status === "processing").length,
-    failed: invoices.filter(i => i.status === "failed").length,
-    uploaded: invoices.filter(i => i.status === "uploaded").length,
-    emailDetected: invoices.filter(i => i.source === "email").length,
-    manualUploads: invoices.filter(i => i.source === "upload").length,
-    successRate: totalInvoices > 0 ? Math.round((invoices.filter(i => i.status === "processed").length / totalInvoices) * 100) : 0,
-    emailSuccessRate: emailDetected > 0 ? Math.round((invoices.filter(i => i.source === "email" && i.status === "processed").length / emailDetected) * 100) : 0,
-    uploadSuccessRate: invoices.filter(i => i.source === "upload").length > 0 ? Math.round((invoices.filter(i => i.source === "upload" && i.status === "processed").length / invoices.filter(i => i.source === "upload").length) * 100) : 0,
+    processed: invoices.filter((i) => i.status === "processed").length,
+    processing: invoices.filter((i) => i.status === "processing").length,
+    failed: invoices.filter((i) => i.status === "failed").length,
+    uploaded: invoices.filter((i) => i.status === "uploaded").length,
+    emailDetected: invoices.filter((i) => i.source === "email").length,
+    manualUploads: invoices.filter((i) => i.source === "upload").length,
+    successRate:
+      totalInvoices > 0
+        ? Math.round(
+            (invoices.filter((i) => i.status === "processed").length /
+              totalInvoices) *
+              100,
+          )
+        : 0,
+    emailSuccessRate:
+      emailDetected > 0
+        ? Math.round(
+            (invoices.filter(
+              (i) => i.source === "email" && i.status === "processed",
+            ).length /
+              emailDetected) *
+              100,
+          )
+        : 0,
+    uploadSuccessRate:
+      invoices.filter((i) => i.source === "upload").length > 0
+        ? Math.round(
+            (invoices.filter(
+              (i) => i.source === "upload" && i.status === "processed",
+            ).length /
+              invoices.filter((i) => i.source === "upload").length) *
+              100,
+          )
+        : 0,
     avgProcessingTime: "2.3s", // This would need to be calculated from actual processing times
     totalAmount: invoices.reduce((sum, i) => sum + (i.amount || 0), 0),
-    emailAmount: invoices.filter(i => i.source === "email").reduce((sum, i) => sum + (i.amount || 0), 0),
-    uploadAmount: invoices.filter(i => i.source === "upload").reduce((sum, i) => sum + (i.amount || 0), 0)
+    emailAmount: invoices
+      .filter((i) => i.source === "email")
+      .reduce((sum, i) => sum + (i.amount || 0), 0),
+    uploadAmount: invoices
+      .filter((i) => i.source === "upload")
+      .reduce((sum, i) => sum + (i.amount || 0), 0),
   };
 
   // Recent activity (combine invoices and emails, sort by created_at/date)
   const recentActivity = [
-    ...invoices.map(i => ({
+    ...invoices.map((i) => ({
       id: i.id,
       type: i.source,
-      action: i.source === "email" ? "Invoice detected from email" : "Manual upload processed",
+      action:
+        i.source === "email"
+          ? "Invoice detected from email"
+          : "Manual upload processed",
       description: i.name,
       time: i.created_at || i.date,
-      status: i.status === "processed" ? "success" : i.status === "failed" ? "warning" : "info"
+      status:
+        i.status === "processed"
+          ? "success"
+          : i.status === "failed"
+            ? "warning"
+            : "info",
     })),
-    ...emails.map(e => ({
+    ...emails.map((e) => ({
       id: e.id,
       type: "email_sent",
       action: "Summary sent via email",
       description: e.subject,
       time: e.date + (e.time ? " " + e.time : ""),
-      status: e.status === "delivered" ? "success" : e.status === "failed" ? "warning" : "info"
-    }))
-  ].sort((a, b) => new Date(b.time).getTime() - new Date(a.time).getTime()).slice(0, 10);
+      status:
+        e.status === "delivered"
+          ? "success"
+          : e.status === "failed"
+            ? "warning"
+            : "info",
+    })),
+  ]
+    .sort((a, b) => new Date(b.time).getTime() - new Date(a.time).getTime())
+    .slice(0, 10);
 
   return (
     <DashboardLayout>
@@ -290,14 +357,15 @@ export default function DashboardPage() {
           <div>
             <h1 className={title({ size: "lg" })}>Dashboard</h1>
             <p className={subtitle({ class: "mt-2" })}>
-              Monitor your invoice processing workflow - from email detection to PDF output
+              Monitor your invoice processing workflow - from email detection to
+              PDF output
             </p>
           </div>
           <div className="flex gap-3">
             <Button
-              variant="bordered"
               color="primary"
               startContent={<BellIcon className="w-4 h-4" />}
+              variant="bordered"
             >
               Notifications
             </Button>
@@ -323,15 +391,17 @@ export default function DashboardPage() {
                 </div>
                 <div>
                   <h3 className="text-lg font-semibold">Email Detection</h3>
-                  <p className="text-default-600">Scan your Gmail for invoice emails</p>
+                  <p className="text-default-600">
+                    Scan your Gmail for invoice emails
+                  </p>
                 </div>
               </div>
               <Button
                 color="secondary"
+                isDisabled={!isGmailConnected}
+                isLoading={checkingEmail}
                 startContent={<InboxIcon className="w-4 h-4" />}
                 onPress={handleCheckEmail}
-                isLoading={checkingEmail}
-                isDisabled={!isGmailConnected}
               >
                 Check Email
               </Button>
@@ -341,11 +411,15 @@ export default function DashboardPage() {
 
         {/* Success/Error Messages */}
         {showMessage && (successMessage || error) && (
-          <Card className={`${successMessage ? 'bg-success/10 border-success/20' : 'bg-danger/10 border-danger/20'} backdrop-blur-sm`}>
+          <Card
+            className={`${successMessage ? "bg-success/10 border-success/20" : "bg-danger/10 border-danger/20"} backdrop-blur-sm`}
+          >
             <CardBody className="p-4">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  <div className={`${successMessage ? 'bg-success/20' : 'bg-danger/20'} rounded-full p-2`}>
+                  <div
+                    className={`${successMessage ? "bg-success/20" : "bg-danger/20"} rounded-full p-2`}
+                  >
                     {successMessage ? (
                       <CheckCircleIcon className="w-5 h-5 text-success" />
                     ) : (
@@ -353,7 +427,9 @@ export default function DashboardPage() {
                     )}
                   </div>
                   <div>
-                    <p className={`font-medium ${successMessage ? 'text-success' : 'text-danger'}`}>
+                    <p
+                      className={`font-medium ${successMessage ? "text-success" : "text-danger"}`}
+                    >
                       {successMessage || error}
                     </p>
                   </div>
@@ -455,17 +531,31 @@ export default function DashboardPage() {
                   <div className="space-y-4">
                     {recentActivity.map((activity) => {
                       const StatusIcon = getStatusIcon(activity.status);
+
                       return (
-                        <div key={activity.id} className="flex items-start gap-4 p-4 rounded-lg bg-content1/30 hover:bg-content1/50 transition-colors">
-                          <div className={`bg-${getStatusColor(activity.status)}/10 rounded-full p-2 mt-1`}>
-                            <StatusIcon className={`w-4 h-4 text-${getStatusColor(activity.status)}`} />
+                        <div
+                          key={activity.id}
+                          className="flex items-start gap-4 p-4 rounded-lg bg-content1/30 hover:bg-content1/50 transition-colors"
+                        >
+                          <div
+                            className={`bg-${getStatusColor(activity.status)}/10 rounded-full p-2 mt-1`}
+                          >
+                            <StatusIcon
+                              className={`w-4 h-4 text-${getStatusColor(activity.status)}`}
+                            />
                           </div>
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center justify-between mb-1">
-                              <p className="font-medium text-sm">{activity.action}</p>
-                              <span className="text-xs text-default-500">{activity.time}</span>
+                              <p className="font-medium text-sm">
+                                {activity.action}
+                              </p>
+                              <span className="text-xs text-default-500">
+                                {activity.time}
+                              </span>
                             </div>
-                            <p className="text-sm text-default-600">{activity.description}</p>
+                            <p className="text-sm text-default-600">
+                              {activity.description}
+                            </p>
                           </div>
                         </div>
                       );
@@ -486,34 +576,34 @@ export default function DashboardPage() {
               <CardBody className="pt-0">
                 <div className="space-y-3">
                   <Button
-                    variant="bordered"
-                    color="primary"
                     className="w-full justify-start"
+                    color="primary"
                     startContent={<CloudArrowUpIcon className="w-4 h-4" />}
+                    variant="bordered"
                   >
                     Upload Invoice
                   </Button>
                   <Button
-                    variant="bordered"
-                    color="secondary"
                     className="w-full justify-start"
+                    color="secondary"
                     startContent={<InboxIcon className="w-4 h-4" />}
+                    variant="bordered"
                   >
                     Check Email
                   </Button>
                   <Button
-                    variant="bordered"
-                    color="success"
                     className="w-full justify-start"
+                    color="success"
                     startContent={<DocumentArrowDownIcon className="w-4 h-4" />}
+                    variant="bordered"
                   >
                     Download PDF
                   </Button>
                   <Button
-                    variant="bordered"
-                    color="warning"
                     className="w-full justify-start"
+                    color="warning"
                     startContent={<EnvelopeIcon className="w-4 h-4" />}
+                    variant="bordered"
                   >
                     Send via Email
                   </Button>
@@ -531,50 +621,74 @@ export default function DashboardPage() {
                   <div>
                     <div className="flex items-center justify-between mb-2">
                       <span className="text-sm font-medium">Current Queue</span>
-                      <span className="text-sm text-default-600">{processingStats.processing} invoices</span>
+                      <span className="text-sm text-default-600">
+                        {processingStats.processing} invoices
+                      </span>
                     </div>
                     <Progress
-                      value={processingStats.total > 0 ? Math.round((processingStats.processed / processingStats.total) * 100) : 0}
-                      color="primary"
                       className="mb-4"
+                      color="primary"
+                      value={
+                        processingStats.total > 0
+                          ? Math.round(
+                              (processingStats.processed /
+                                processingStats.total) *
+                                100,
+                            )
+                          : 0
+                      }
                     />
                     <p className="text-xs text-default-500">
-                      {processingStats.processing > 0 ? `Processing ${processingStats.processing} invoices` : 'No invoices in queue'}
+                      {processingStats.processing > 0
+                        ? `Processing ${processingStats.processing} invoices`
+                        : "No invoices in queue"}
                     </p>
                   </div>
-                  
+
                   <div className="space-y-2">
                     <div className="flex items-center justify-between text-sm">
                       <span>Processing Status</span>
                       <span className="font-medium text-success">
-                        {processingStats.processing > 0 ? `${processingStats.processing} active` : 'Idle'}
+                        {processingStats.processing > 0
+                          ? `${processingStats.processing} active`
+                          : "Idle"}
                       </span>
                     </div>
                     <div className="flex items-center justify-between text-sm">
                       <span>Overall Success Rate</span>
-                      <span className={`font-medium ${processingStats.successRate >= 90 ? 'text-success' : processingStats.successRate >= 70 ? 'text-warning' : 'text-danger'}`}>
+                      <span
+                        className={`font-medium ${processingStats.successRate >= 90 ? "text-success" : processingStats.successRate >= 70 ? "text-warning" : "text-danger"}`}
+                      >
                         {processingStats.successRate}%
                       </span>
                     </div>
                     <div className="flex items-center justify-between text-sm">
                       <span>Email Success Rate</span>
-                      <span className={`font-medium ${processingStats.emailSuccessRate >= 90 ? 'text-success' : processingStats.emailSuccessRate >= 70 ? 'text-warning' : 'text-danger'}`}>
+                      <span
+                        className={`font-medium ${processingStats.emailSuccessRate >= 90 ? "text-success" : processingStats.emailSuccessRate >= 70 ? "text-warning" : "text-danger"}`}
+                      >
                         {processingStats.emailSuccessRate}%
                       </span>
                     </div>
                     <div className="flex items-center justify-between text-sm">
                       <span>Upload Success Rate</span>
-                      <span className={`font-medium ${processingStats.uploadSuccessRate >= 90 ? 'text-success' : processingStats.uploadSuccessRate >= 70 ? 'text-warning' : 'text-danger'}`}>
+                      <span
+                        className={`font-medium ${processingStats.uploadSuccessRate >= 90 ? "text-success" : processingStats.uploadSuccessRate >= 70 ? "text-warning" : "text-danger"}`}
+                      >
                         {processingStats.uploadSuccessRate}%
                       </span>
                     </div>
                     <div className="flex items-center justify-between text-sm">
                       <span>Total Processed</span>
-                      <span className="font-medium">{processingStats.processed}</span>
+                      <span className="font-medium">
+                        {processingStats.processed}
+                      </span>
                     </div>
                     <div className="flex items-center justify-between text-sm">
                       <span>Failed</span>
-                      <span className="font-medium text-danger">{processingStats.failed}</span>
+                      <span className="font-medium text-danger">
+                        {processingStats.failed}
+                      </span>
                     </div>
                   </div>
                 </div>
@@ -589,9 +703,15 @@ export default function DashboardPage() {
             <div className="flex items-center justify-between">
               <h3 className="text-lg font-semibold">Processing Performance</h3>
               <div className="flex gap-2">
-                <Button variant="light" size="sm">7 Days</Button>
-                <Button variant="light" size="sm" color="primary">30 Days</Button>
-                <Button variant="light" size="sm">90 Days</Button>
+                <Button size="sm" variant="light">
+                  7 Days
+                </Button>
+                <Button color="primary" size="sm" variant="light">
+                  30 Days
+                </Button>
+                <Button size="sm" variant="light">
+                  90 Days
+                </Button>
               </div>
             </div>
           </CardHeader>
@@ -602,9 +722,13 @@ export default function DashboardPage() {
                 <div className="bg-success/10 rounded-lg p-4 border border-success/20">
                   <div className="flex items-center gap-2 mb-2">
                     <InboxIcon className="w-4 h-4 text-success" />
-                    <span className="text-sm font-medium text-success">Email Detection</span>
+                    <span className="text-sm font-medium text-success">
+                      Email Detection
+                    </span>
                   </div>
-                  <div className="text-2xl font-bold text-success">{processingStats.emailDetected}</div>
+                  <div className="text-2xl font-bold text-success">
+                    {processingStats.emailDetected}
+                  </div>
                   <div className="text-xs text-default-500">
                     ${processingStats.emailAmount.toLocaleString()} total
                   </div>
@@ -612,9 +736,13 @@ export default function DashboardPage() {
                 <div className="bg-primary/10 rounded-lg p-4 border border-primary/20">
                   <div className="flex items-center gap-2 mb-2">
                     <CloudArrowUpIcon className="w-4 h-4 text-primary" />
-                    <span className="text-sm font-medium text-primary">Manual Uploads</span>
+                    <span className="text-sm font-medium text-primary">
+                      Manual Uploads
+                    </span>
                   </div>
-                  <div className="text-2xl font-bold text-primary">{processingStats.manualUploads}</div>
+                  <div className="text-2xl font-bold text-primary">
+                    {processingStats.manualUploads}
+                  </div>
                   <div className="text-xs text-default-500">
                     ${processingStats.uploadAmount.toLocaleString()} total
                   </div>
@@ -624,15 +752,23 @@ export default function DashboardPage() {
               {/* Performance Metrics */}
               <div className="grid grid-cols-3 gap-4">
                 <div className="text-center">
-                  <div className="text-lg font-bold text-success">{processingStats.successRate}%</div>
-                  <div className="text-xs text-default-500">Overall Success</div>
+                  <div className="text-lg font-bold text-success">
+                    {processingStats.successRate}%
+                  </div>
+                  <div className="text-xs text-default-500">
+                    Overall Success
+                  </div>
                 </div>
                 <div className="text-center">
-                  <div className="text-lg font-bold text-secondary">{processingStats.emailSuccessRate}%</div>
+                  <div className="text-lg font-bold text-secondary">
+                    {processingStats.emailSuccessRate}%
+                  </div>
                   <div className="text-xs text-default-500">Email Success</div>
                 </div>
                 <div className="text-center">
-                  <div className="text-lg font-bold text-primary">{processingStats.uploadSuccessRate}%</div>
+                  <div className="text-lg font-bold text-primary">
+                    {processingStats.uploadSuccessRate}%
+                  </div>
                   <div className="text-xs text-default-500">Upload Success</div>
                 </div>
               </div>
@@ -643,7 +779,9 @@ export default function DashboardPage() {
                   <div className="text-2xl font-bold text-success">
                     ${processingStats.totalAmount.toLocaleString()}
                   </div>
-                  <div className="text-sm text-default-500">Total Invoice Value</div>
+                  <div className="text-sm text-default-500">
+                    Total Invoice Value
+                  </div>
                 </div>
               </div>
             </div>
@@ -658,30 +796,49 @@ export default function DashboardPage() {
                 <SparklesIcon className="w-6 h-6 text-primary" />
               </div>
               <div className="flex-1">
-                <h3 className="text-lg font-semibold mb-2">Get Started with AI Invoice Summarizer</h3>
+                <h3 className="text-lg font-semibold mb-2">
+                  Get Started with AI Invoice Summarizer
+                </h3>
                 <p className="text-default-600 mb-4">
-                  Ready to streamline your invoice processing? Here's how to get started with our complete workflow.
+                  Ready to streamline your invoice processing? Here&apos;s how
+                  to get started with our complete workflow.
                 </p>
                 <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
                   <div className="bg-content1/50 backdrop-blur-sm rounded-lg p-4 border-1 border-divider/50">
-                    <div className="text-2xl font-bold text-primary mb-1">1</div>
+                    <div className="text-2xl font-bold text-primary mb-1">
+                      1
+                    </div>
                     <h4 className="font-medium mb-2">Connect Email</h4>
-                    <p className="text-sm text-default-600">Link your email for automatic invoice detection</p>
+                    <p className="text-sm text-default-600">
+                      Link your email for automatic invoice detection
+                    </p>
                   </div>
                   <div className="bg-content1/50 backdrop-blur-sm rounded-lg p-4 border-1 border-divider/50">
-                    <div className="text-2xl font-bold text-primary mb-1">2</div>
+                    <div className="text-2xl font-bold text-primary mb-1">
+                      2
+                    </div>
                     <h4 className="font-medium mb-2">Upload or Detect</h4>
-                    <p className="text-sm text-default-600">Manually upload or let our system detect invoices</p>
+                    <p className="text-sm text-default-600">
+                      Manually upload or let our system detect invoices
+                    </p>
                   </div>
                   <div className="bg-content1/50 backdrop-blur-sm rounded-lg p-4 border-1 border-divider/50">
-                    <div className="text-2xl font-bold text-primary mb-1">3</div>
+                    <div className="text-2xl font-bold text-primary mb-1">
+                      3
+                    </div>
                     <h4 className="font-medium mb-2">Get Summaries</h4>
-                    <p className="text-sm text-default-600">AI processes and creates detailed summaries</p>
+                    <p className="text-sm text-default-600">
+                      AI processes and creates detailed summaries
+                    </p>
                   </div>
                   <div className="bg-content1/50 backdrop-blur-sm rounded-lg p-4 border-1 border-divider/50">
-                    <div className="text-2xl font-bold text-primary mb-1">4</div>
+                    <div className="text-2xl font-bold text-primary mb-1">
+                      4
+                    </div>
                     <h4 className="font-medium mb-2">Download or Send</h4>
-                    <p className="text-sm text-default-600">Download PDF or send via email</p>
+                    <p className="text-sm text-default-600">
+                      Download PDF or send via email
+                    </p>
                   </div>
                 </div>
               </div>
@@ -691,4 +848,4 @@ export default function DashboardPage() {
       </div>
     </DashboardLayout>
   );
-} 
+}

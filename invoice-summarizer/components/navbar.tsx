@@ -31,7 +31,13 @@ import {
 
 export const Navbar = () => {
   const pathname = usePathname();
-  const hideNavbar = pathname.startsWith("/dashboard") || pathname.startsWith("/invoices") || pathname.startsWith("/clients") || pathname.startsWith("/email-history") || pathname.startsWith("/settings");
+  const hideNavbar =
+    pathname.startsWith("/dashboard") ||
+    pathname.startsWith("/invoices") ||
+    pathname.startsWith("/clients") ||
+    pathname.startsWith("/email-history") ||
+    pathname.startsWith("/settings");
+
   if (hideNavbar) return null;
 
   const searchInput = (

@@ -2,15 +2,16 @@
 
 import { Link } from "@heroui/link";
 import { Button } from "@heroui/button";
-import { Card, CardBody, CardHeader } from "@heroui/card";
+import { Card, CardBody } from "@heroui/card";
 import { Input } from "@heroui/input";
 import { Checkbox } from "@heroui/checkbox";
 import { Divider } from "@heroui/divider";
-import { title, subtitle } from "@/components/primitives";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { supabase } from "@/lib/supabaseClient";
 import toast from "react-hot-toast";
+
+import { supabase } from "@/lib/supabaseClient";
+import { title, subtitle } from "@/components/primitives";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
@@ -27,6 +28,7 @@ export default function LoginPage() {
       email,
       password,
     });
+
     setLoading(false);
     if (error) {
       setError(error.message);
@@ -52,43 +54,41 @@ export default function LoginPage() {
             <form className="space-y-6" onSubmit={handleSubmit}>
               <div>
                 <Input
-                  type="email"
+                  isRequired
                   label="Email"
                   placeholder="Enter your email"
-                  variant="bordered"
-                  isRequired
+                  type="email"
                   value={email}
-                  onChange={e => setEmail(e.target.value)}
+                  variant="bordered"
+                  onChange={(e) => setEmail(e.target.value)}
                 />
               </div>
-              
+
               <div>
                 <Input
-                  type="password"
+                  isRequired
                   label="Password"
                   placeholder="Enter your password"
-                  variant="bordered"
-                  isRequired
+                  type="password"
                   value={password}
-                  onChange={e => setPassword(e.target.value)}
+                  variant="bordered"
+                  onChange={(e) => setPassword(e.target.value)}
                 />
               </div>
 
               <div className="flex justify-between items-center">
-                <Checkbox size="sm">
-                  Remember me
-                </Checkbox>
-                <Link href="/forgot-password" className="text-sm text-primary">
+                <Checkbox size="sm">Remember me</Checkbox>
+                <Link className="text-sm text-primary" href="/forgot-password">
                   Forgot password?
                 </Link>
               </div>
               {error && <div className="text-danger text-sm">{error}</div>}
               <Button
-                type="submit"
                 className="w-full"
                 color="primary"
-                size="lg"
                 isLoading={loading}
+                size="lg"
+                type="submit"
               >
                 Sign In
               </Button>
@@ -98,8 +98,8 @@ export default function LoginPage() {
 
             <div className="text-center">
               <p className="text-sm text-default-600">
-                Don't have an account?{" "}
-                <Link href="/signup" className="text-primary">
+                Don&apos;t have an account?{" "}
+                <Link className="text-primary" href="/signup">
                   Sign up
                 </Link>
               </p>
@@ -109,4 +109,4 @@ export default function LoginPage() {
       </div>
     </div>
   );
-} 
+}

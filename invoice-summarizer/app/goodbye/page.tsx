@@ -2,9 +2,10 @@
 
 import { Card, CardBody } from "@heroui/card";
 import { Button } from "@heroui/button";
-import { title, subtitle } from "@/components/primitives";
 import { CheckCircleIcon } from "@heroicons/react/24/outline";
 import Link from "next/link";
+
+import { title, subtitle } from "@/components/primitives";
 
 export default function GoodbyePage() {
   return (
@@ -26,29 +27,30 @@ export default function GoodbyePage() {
             <div className="space-y-6">
               <div className="text-center">
                 <p className="text-default-600 mb-4">
-                  Thank you for using AI Invoice Summarizer. We're sorry to see you go.
+                  Thank you for using AI Invoice Summarizer. We&apos;re sorry to
+                  see you go.
                 </p>
                 <p className="text-sm text-default-500">
                   If you change your mind, you can always create a new account.
                 </p>
               </div>
-              
+
               <div className="space-y-3">
                 <Button
                   as={Link}
-                  href="/signup"
                   className="w-full"
                   color="primary"
+                  href="/signup"
                   size="lg"
                 >
                   Create New Account
                 </Button>
                 <Button
                   as={Link}
-                  href="/"
                   className="w-full"
-                  variant="bordered"
+                  href="/"
                   size="lg"
+                  variant="bordered"
                 >
                   Back to Home
                 </Button>
@@ -59,4 +61,4 @@ export default function GoodbyePage() {
       </div>
     </div>
   );
-} 
+}

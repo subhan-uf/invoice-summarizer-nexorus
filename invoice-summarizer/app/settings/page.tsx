@@ -7,10 +7,15 @@ import { Input } from "@heroui/input";
 import { Switch } from "@heroui/switch";
 import { Avatar } from "@heroui/avatar";
 import { Divider } from "@heroui/divider";
-import { Modal, ModalContent, ModalHeader, ModalBody, ModalFooter, useDisclosure } from "@heroui/modal";
-import { title, subtitle } from "@/components/primitives";
-import DashboardLayout from "@/components/dashboard-layout";
-import { 
+import {
+  Modal,
+  ModalContent,
+  ModalHeader,
+  ModalBody,
+  ModalFooter,
+  useDisclosure,
+} from "@heroui/modal";
+import {
   UserIcon,
   BuildingOfficeIcon,
   ShieldCheckIcon,
@@ -24,10 +29,13 @@ import {
   KeyIcon,
   ExclamationTriangleIcon,
   CheckCircleIcon,
-  CogIcon
+  CogIcon,
 } from "@heroicons/react/24/outline";
-import { supabase } from "@/lib/supabaseClient";
 import toast from "react-hot-toast";
+
+import { title, subtitle } from "@/components/primitives";
+import DashboardLayout from "@/components/dashboard-layout";
+import { supabase } from "@/lib/supabaseClient";
 
 export default function SettingsPage() {
   const [notifications, setNotifications] = useState({
@@ -35,7 +43,7 @@ export default function SettingsPage() {
     sms: false,
     marketing: true,
     updates: true,
-    security: true
+    security: true,
   });
 
   const [profile, setProfile] = useState<any>(null);
@@ -57,38 +65,46 @@ export default function SettingsPage() {
   const [passwordError, setPasswordError] = useState("");
   const [passwordSuccess, setPasswordSuccess] = useState("");
 
-  const { isOpen, onOpen, onClose } = useDisclosure();
+  const { isOpen, onClose } = useDisclosure();
 
   useEffect(() => {
     const fetchProfile = async () => {
       setProfileLoading(true);
       setProfileError("");
-      const { data: { user } } = await supabase.auth.getUser();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
       if (!user) {
         setProfileError("Not authenticated");
         setProfileLoading(false);
+
         return;
       }
       const { data, error } = await supabase
         .from("profiles")
-        .select("id, first_name, last_name, phone, avatar_url, company, created_at")
+        .select(
+          "id, first_name, last_name, phone, avatar_url, company, created_at",
+        )
         .eq("id", user.id)
         .single();
+
       if (error) {
         setProfileError(error.message);
       } else {
         // Use email from auth user, not from profiles table
-        setProfile({ ...data, email: user.email || '' });
+        setProfile({ ...data, email: user.email || "" });
       }
       setProfileLoading(false);
     };
+
     fetchProfile();
   }, []);
 
   const handleNotificationChange = (key: string, value: boolean) => {
-    setNotifications(prev => ({
+    setNotifications((prev) => ({
       ...prev,
-      [key]: value
+      [key]: value,
     }));
   };
 
@@ -100,20 +116,28 @@ export default function SettingsPage() {
     setSaveLoading(true);
     setSaveSuccess("");
     setProfileError("");
-    const { data: { user } } = await supabase.auth.getUser();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
     if (!user) {
       setProfileError("Not authenticated");
       toast.error("Please log in to save your profile");
       setSaveLoading(false);
+
       return;
     }
     // Update email in Supabase Auth if changed
     if (profile.email && profile.email !== user.email) {
-      const { error: emailError } = await supabase.auth.updateUser({ email: profile.email });
+      const { error: emailError } = await supabase.auth.updateUser({
+        email: profile.email,
+      });
+
       if (emailError) {
         setProfileError(emailError.message);
         toast.error(emailError.message);
         setSaveLoading(false);
+
         return;
       }
     }
@@ -125,6 +149,7 @@ export default function SettingsPage() {
       phone: profile.phone,
       avatar_url: profile.avatar_url,
     });
+
     setSaveLoading(false);
     if (error) {
       setProfileError(error.message);
@@ -141,20 +166,30 @@ export default function SettingsPage() {
     setAvatarUploading(true);
     setAvatarError("");
     const file = e.target.files[0];
-    const { data: { user } } = await supabase.auth.getUser();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
     if (!user) {
       setAvatarError("Not authenticated");
       setAvatarUploading(false);
+
       return;
     }
     const filePath = `${user.id}/avatar_${Date.now()}`;
-    const { error: storageError } = await supabase.storage.from("avatars").upload(filePath, file, { upsert: true });
+    const { error: storageError } = await supabase.storage
+      .from("avatars")
+      .upload(filePath, file, { upsert: true });
+
     if (storageError) {
       setAvatarError(storageError.message);
       setAvatarUploading(false);
+
       return;
     }
-    const avatarUrl = supabase.storage.from("avatars").getPublicUrl(filePath).data.publicUrl;
+    const avatarUrl = supabase.storage.from("avatars").getPublicUrl(filePath)
+      .data.publicUrl;
+
     setProfile((prev: any) => ({ ...prev, avatar_url: avatarUrl }));
     setAvatarUploading(false);
   };
@@ -169,10 +204,14 @@ export default function SettingsPage() {
     setSaveLoading(true);
     setSaveSuccess("");
     setProfileError("");
-    const { data: { user } } = await supabase.auth.getUser();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
     if (!user) {
       setProfileError("Not authenticated");
       setSaveLoading(false);
+
       return;
     }
     const { error } = await supabase.from("user_settings").upsert({
@@ -183,6 +222,7 @@ export default function SettingsPage() {
       updates: notifications.updates,
       security_alerts: notifications.security,
     });
+
     setSaveLoading(false);
     if (error) {
       setProfileError(error.message);
@@ -196,47 +236,51 @@ export default function SettingsPage() {
     if (deleteConfirm !== "DELETE") {
       setDeleteError("You must type 'DELETE' to confirm.");
       toast.error("You must type 'DELETE' to confirm.");
+
       return;
     }
     setDeleteLoading(true);
     setDeleteError("");
-    
+
     try {
       // Get the current session token
-      const { data: { session } } = await supabase.auth.getSession();
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
       const token = session?.access_token;
-      
+
       if (!token) {
-        setDeleteError('Please log in to delete your account');
-        toast.error('Please log in to delete your account');
+        setDeleteError("Please log in to delete your account");
+        toast.error("Please log in to delete your account");
         setDeleteLoading(false);
+
         return;
       }
-      
-      const response = await fetch('/api/delete-account', {
-        method: 'POST',
+
+      const response = await fetch("/api/delete-account", {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
         },
       });
 
       const result = await response.json();
-      
+
       if (result.success) {
         setDeleteLoading(false);
-        toast.success('Account deleted successfully');
+        toast.success("Account deleted successfully");
         // Redirect to goodbye page
         window.location.href = "/goodbye";
       } else {
-        setDeleteError(result.error || 'Failed to delete account');
-        toast.error(result.error || 'Failed to delete account');
+        setDeleteError(result.error || "Failed to delete account");
+        toast.error(result.error || "Failed to delete account");
         setDeleteLoading(false);
       }
     } catch (error) {
-      console.error('Error deleting account:', error);
-      setDeleteError('Failed to delete account. Please try again.');
-      toast.error('Failed to delete account. Please try again.');
+      console.error("Error deleting account:", error);
+      setDeleteError("Failed to delete account. Please try again.");
+      toast.error("Failed to delete account. Please try again.");
       setDeleteLoading(false);
     }
   };
@@ -249,35 +293,51 @@ export default function SettingsPage() {
       setPasswordError("All password fields are required.");
       toast.error("All password fields are required.");
       setPasswordLoading(false);
+
       return;
     }
     if (newPassword !== confirmPassword) {
       setPasswordError("New passwords do not match.");
       toast.error("New passwords do not match.");
       setPasswordLoading(false);
+
       return;
     }
     // Re-authenticate user by signing in with current password
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    const {
+      data: { user },
+      error: _authError,
+    } = await supabase.auth.getUser();
+
     if (!user) {
       setPasswordError("Not authenticated");
       toast.error("Please log in to change your password");
       setPasswordLoading(false);
+
       return;
     }
-    const { error: signInError } = await supabase.auth.signInWithPassword({ email: user.email || '', password: currentPassword });
+    const { error: signInError } = await supabase.auth.signInWithPassword({
+      email: user.email || "",
+      password: currentPassword,
+    });
+
     if (signInError) {
       setPasswordError("Current password is incorrect.");
       toast.error("Current password is incorrect.");
       setPasswordLoading(false);
+
       return;
     }
     // Update password
-    const { error: updateError } = await supabase.auth.updateUser({ password: newPassword });
+    const { error: updateError } = await supabase.auth.updateUser({
+      password: newPassword,
+    });
+
     if (updateError) {
       setPasswordError(updateError.message);
       toast.error(updateError.message);
       setPasswordLoading(false);
+
       return;
     }
     setPasswordSuccess("Password changed successfully!");
@@ -301,17 +361,17 @@ export default function SettingsPage() {
           </div>
           <div className="flex gap-3">
             <Button
-              variant="bordered"
               color="primary"
               startContent={<ShieldCheckIcon className="w-4 h-4" />}
+              variant="bordered"
             >
               Security Log
             </Button>
             <Button
               color="primary"
+              isLoading={saveLoading}
               startContent={<CogIcon className="w-4 h-4" />}
               onPress={handleSaveProfile}
-              isLoading={saveLoading}
             >
               Save Changes
             </Button>
@@ -335,34 +395,44 @@ export default function SettingsPage() {
                 {profileLoading ? (
                   <div className="py-8 text-center">Loading profile...</div>
                 ) : profileError ? (
-                  <div className="py-8 text-danger text-center">{profileError}</div>
+                  <div className="py-8 text-danger text-center">
+                    {profileError}
+                  </div>
                 ) : (
                   <div className="space-y-6">
                     <div className="flex items-center gap-6">
                       <Avatar
-                        src={profile.avatar_url || "https://i.pravatar.cc/150?u=1"}
+                        className="w-20 h-20"
                         name={profile.first_name + " " + profile.last_name}
                         size="lg"
-                        className="w-20 h-20"
+                        src={
+                          profile.avatar_url || "https://i.pravatar.cc/150?u=1"
+                        }
                       />
                       <div className="flex gap-3">
                         <Button
-                          variant="bordered"
-                          color="primary"
-                          startContent={<CameraIcon className="w-4 h-4" />}
-                          size="sm"
-                          isLoading={avatarUploading}
                           as="label"
+                          color="primary"
+                          isLoading={avatarUploading}
+                          size="sm"
+                          startContent={<CameraIcon className="w-4 h-4" />}
+                          variant="bordered"
                         >
                           Change Photo
-                          <input type="file" accept="image/*" hidden onChange={handleAvatarChange} disabled={avatarUploading} />
+                          <input
+                            hidden
+                            accept="image/*"
+                            disabled={avatarUploading}
+                            type="file"
+                            onChange={handleAvatarChange}
+                          />
                         </Button>
                         <Button
-                          variant="light"
                           color="danger"
-                          size="sm"
-                          onPress={handleAvatarRemove}
                           disabled={avatarUploading}
+                          size="sm"
+                          variant="light"
+                          onPress={handleAvatarRemove}
                         >
                           Remove
                         </Button>
@@ -372,46 +442,68 @@ export default function SettingsPage() {
                       <Input
                         label="First Name"
                         placeholder="John"
-                        variant="bordered"
+                        startContent={
+                          <UserIcon className="w-4 h-4 text-default-400" />
+                        }
                         value={profile.first_name || ""}
-                        startContent={<UserIcon className="w-4 h-4 text-default-400" />}
-                        onChange={e => handleProfileChange("first_name", e.target.value)}
+                        variant="bordered"
+                        onChange={(e) =>
+                          handleProfileChange("first_name", e.target.value)
+                        }
                       />
                       <Input
                         label="Last Name"
                         placeholder="Doe"
-                        variant="bordered"
+                        startContent={
+                          <UserIcon className="w-4 h-4 text-default-400" />
+                        }
                         value={profile.last_name || ""}
-                        startContent={<UserIcon className="w-4 h-4 text-default-400" />}
-                        onChange={e => handleProfileChange("last_name", e.target.value)}
+                        variant="bordered"
+                        onChange={(e) =>
+                          handleProfileChange("last_name", e.target.value)
+                        }
                       />
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <Input
                         label="Email Address"
                         placeholder="john@example.com"
-                        variant="bordered"
+                        startContent={
+                          <EnvelopeIcon className="w-4 h-4 text-default-400" />
+                        }
                         value={profile.email || ""}
-                        startContent={<EnvelopeIcon className="w-4 h-4 text-default-400" />}
-                        onChange={e => handleProfileChange("email", e.target.value)}
+                        variant="bordered"
+                        onChange={(e) =>
+                          handleProfileChange("email", e.target.value)
+                        }
                       />
                       <Input
                         label="Phone Number"
                         placeholder="+1 (555) 123-4567"
-                        variant="bordered"
+                        startContent={
+                          <PhoneIcon className="w-4 h-4 text-default-400" />
+                        }
                         value={profile.phone || ""}
-                        startContent={<PhoneIcon className="w-4 h-4 text-default-400" />}
-                        onChange={e => handleProfileChange("phone", e.target.value)}
+                        variant="bordered"
+                        onChange={(e) =>
+                          handleProfileChange("phone", e.target.value)
+                        }
                       />
                     </div>
-                    {avatarError && <div className="text-danger text-sm">{avatarError}</div>}
-                    {saveSuccess && <div className="text-success text-sm">{saveSuccess}</div>}
-                    {profileError && <div className="text-danger text-sm">{profileError}</div>}
+                    {avatarError && (
+                      <div className="text-danger text-sm">{avatarError}</div>
+                    )}
+                    {saveSuccess && (
+                      <div className="text-success text-sm">{saveSuccess}</div>
+                    )}
+                    {profileError && (
+                      <div className="text-danger text-sm">{profileError}</div>
+                    )}
                     <Button
                       color="primary"
+                      isLoading={saveLoading}
                       startContent={<CogIcon className="w-4 h-4" />}
                       onPress={handleSaveProfile}
-                      isLoading={saveLoading}
                     >
                       Save Changes
                     </Button>
@@ -438,53 +530,57 @@ export default function SettingsPage() {
                     </div>
                     <div className="flex gap-3">
                       <Button
-                        variant="bordered"
                         color="secondary"
-                        startContent={<CameraIcon className="w-4 h-4" />}
                         size="sm"
+                        startContent={<CameraIcon className="w-4 h-4" />}
+                        variant="bordered"
                       >
                         Upload Logo
                       </Button>
-                      <Button
-                        variant="light"
-                        color="danger"
-                        size="sm"
-                      >
+                      <Button color="danger" size="sm" variant="light">
                         Remove
                       </Button>
                     </div>
                   </div>
-                  
+
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <Input
+                      defaultValue="AI Invoice Summarizer"
                       label="Company Name"
                       placeholder="Your Company Name"
+                      startContent={
+                        <BuildingOfficeIcon className="w-4 h-4 text-default-400" />
+                      }
                       variant="bordered"
-                      defaultValue="AI Invoice Summarizer"
-                      startContent={<BuildingOfficeIcon className="w-4 h-4 text-default-400" />}
                     />
                     <Input
+                      defaultValue="https://invoice-summarizer.com"
                       label="Website"
                       placeholder="https://example.com"
+                      startContent={
+                        <GlobeAltIcon className="w-4 h-4 text-default-400" />
+                      }
                       variant="bordered"
-                      defaultValue="https://invoice-summarizer.com"
-                      startContent={<GlobeAltIcon className="w-4 h-4 text-default-400" />}
                     />
                   </div>
-                  
+
                   <textarea
                     className="border rounded-lg p-2 w-full min-h-[80px]"
                     placeholder="Brief description of your company"
                     value={profile?.tagline || ""}
-                    onChange={e => handleProfileChange("tagline", e.target.value)}
+                    onChange={(e) =>
+                      handleProfileChange("tagline", e.target.value)
+                    }
                   />
-                  
+
                   <Input
+                    defaultValue="123 Business St, City, State 12345"
                     label="Address"
                     placeholder="Enter your business address"
+                    startContent={
+                      <MapPinIcon className="w-4 h-4 text-default-400" />
+                    }
                     variant="bordered"
-                    defaultValue="123 Business St, City, State 12345"
-                    startContent={<MapPinIcon className="w-4 h-4 text-default-400" />}
                   />
                 </div>
               </CardBody>
@@ -505,38 +601,50 @@ export default function SettingsPage() {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <Input
                       label="Current Password"
-                      type="password"
                       placeholder="Enter current password"
-                      variant="bordered"
-                      startContent={<KeyIcon className="w-4 h-4 text-default-400" />}
+                      startContent={
+                        <KeyIcon className="w-4 h-4 text-default-400" />
+                      }
+                      type="password"
                       value={currentPassword}
-                      onChange={e => setCurrentPassword(e.target.value)}
+                      variant="bordered"
+                      onChange={(e) => setCurrentPassword(e.target.value)}
                     />
                     <Input
                       label="New Password"
-                      type="password"
                       placeholder="Enter new password"
-                      variant="bordered"
-                      startContent={<KeyIcon className="w-4 h-4 text-default-400" />}
+                      startContent={
+                        <KeyIcon className="w-4 h-4 text-default-400" />
+                      }
+                      type="password"
                       value={newPassword}
-                      onChange={e => setNewPassword(e.target.value)}
+                      variant="bordered"
+                      onChange={(e) => setNewPassword(e.target.value)}
                     />
                   </div>
                   <Input
                     label="Confirm New Password"
-                    type="password"
                     placeholder="Confirm new password"
-                    variant="bordered"
-                    startContent={<KeyIcon className="w-4 h-4 text-default-400" />}
+                    startContent={
+                      <KeyIcon className="w-4 h-4 text-default-400" />
+                    }
+                    type="password"
                     value={confirmPassword}
-                    onChange={e => setConfirmPassword(e.target.value)}
+                    variant="bordered"
+                    onChange={(e) => setConfirmPassword(e.target.value)}
                   />
-                  {passwordError && <div className="text-danger text-sm">{passwordError}</div>}
-                  {passwordSuccess && <div className="text-success text-sm">{passwordSuccess}</div>}
+                  {passwordError && (
+                    <div className="text-danger text-sm">{passwordError}</div>
+                  )}
+                  {passwordSuccess && (
+                    <div className="text-success text-sm">
+                      {passwordSuccess}
+                    </div>
+                  )}
                   <Button
                     color="primary"
-                    onPress={handleChangePassword}
                     isLoading={passwordLoading}
+                    onPress={handleChangePassword}
                   >
                     Change Password
                   </Button>
@@ -562,80 +670,104 @@ export default function SettingsPage() {
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="font-medium">Email Notifications</p>
-                      <p className="text-sm text-default-600">Receive updates via email</p>
+                      <p className="text-sm text-default-600">
+                        Receive updates via email
+                      </p>
                     </div>
                     <Switch
-                      isSelected={notifications.email}
-                      onValueChange={(value) => handleNotificationChange('email', value)}
                       color="success"
+                      isSelected={notifications.email}
+                      onValueChange={(value) =>
+                        handleNotificationChange("email", value)
+                      }
                     />
                   </div>
-                  
+
                   <Divider />
-                  
+
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="font-medium">SMS Notifications</p>
-                      <p className="text-sm text-default-600">Receive updates via SMS</p>
+                      <p className="text-sm text-default-600">
+                        Receive updates via SMS
+                      </p>
                     </div>
                     <Switch
-                      isSelected={notifications.sms}
-                      onValueChange={(value) => handleNotificationChange('sms', value)}
                       color="success"
+                      isSelected={notifications.sms}
+                      onValueChange={(value) =>
+                        handleNotificationChange("sms", value)
+                      }
                     />
                   </div>
-                  
+
                   <Divider />
-                  
+
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="font-medium">Marketing Emails</p>
-                      <p className="text-sm text-default-600">Receive promotional content</p>
+                      <p className="text-sm text-default-600">
+                        Receive promotional content
+                      </p>
                     </div>
                     <Switch
-                      isSelected={notifications.marketing}
-                      onValueChange={(value) => handleNotificationChange('marketing', value)}
                       color="success"
+                      isSelected={notifications.marketing}
+                      onValueChange={(value) =>
+                        handleNotificationChange("marketing", value)
+                      }
                     />
                   </div>
-                  
+
                   <Divider />
-                  
+
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="font-medium">Product Updates</p>
-                      <p className="text-sm text-default-600">New features and improvements</p>
+                      <p className="text-sm text-default-600">
+                        New features and improvements
+                      </p>
                     </div>
                     <Switch
-                      isSelected={notifications.updates}
-                      onValueChange={(value) => handleNotificationChange('updates', value)}
                       color="success"
+                      isSelected={notifications.updates}
+                      onValueChange={(value) =>
+                        handleNotificationChange("updates", value)
+                      }
                     />
                   </div>
-                  
+
                   <Divider />
-                  
+
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="font-medium">Security Alerts</p>
-                      <p className="text-sm text-default-600">Account security notifications</p>
+                      <p className="text-sm text-default-600">
+                        Account security notifications
+                      </p>
                     </div>
                     <Switch
-                      isSelected={notifications.security}
-                      onValueChange={(value) => handleNotificationChange('security', value)}
                       color="success"
+                      isSelected={notifications.security}
+                      onValueChange={(value) =>
+                        handleNotificationChange("security", value)
+                      }
                     />
                   </div>
                 </div>
                 <Button
                   color="primary"
-                  onPress={handleSaveNotifications}
                   isLoading={saveLoading}
+                  onPress={handleSaveNotifications}
                 >
                   Save Notification Preferences
                 </Button>
-                {saveSuccess && <div className="text-success text-sm mt-2">{saveSuccess}</div>}
-                {profileError && <div className="text-danger text-sm mt-2">{profileError}</div>}
+                {saveSuccess && (
+                  <div className="text-success text-sm mt-2">{saveSuccess}</div>
+                )}
+                {profileError && (
+                  <div className="text-danger text-sm mt-2">{profileError}</div>
+                )}
               </CardBody>
             </Card>
 
@@ -650,18 +782,22 @@ export default function SettingsPage() {
                     <CheckCircleIcon className="w-5 h-5 text-success" />
                     <div>
                       <p className="font-medium">Email Verified</p>
-                      <p className="text-sm text-default-600">john@example.com</p>
+                      <p className="text-sm text-default-600">
+                        john@example.com
+                      </p>
                     </div>
                   </div>
-                  
+
                   <div className="flex items-center gap-3">
                     <CheckCircleIcon className="w-5 h-5 text-success" />
                     <div>
                       <p className="font-medium">2FA Enabled</p>
-                      <p className="text-sm text-default-600">Authenticator app</p>
+                      <p className="text-sm text-default-600">
+                        Authenticator app
+                      </p>
                     </div>
                   </div>
-                  
+
                   <div className="flex items-center gap-3">
                     <ExclamationTriangleIcon className="w-5 h-5 text-warning" />
                     <div>
@@ -680,22 +816,31 @@ export default function SettingsPage() {
                   <div className="bg-danger/10 rounded-full p-2">
                     <TrashIcon className="w-5 h-5 text-danger" />
                   </div>
-                  <h3 className="text-lg font-semibold text-danger">Danger Zone</h3>
+                  <h3 className="text-lg font-semibold text-danger">
+                    Danger Zone
+                  </h3>
                 </div>
               </CardHeader>
               <CardBody className="pt-0">
                 <div className="space-y-4">
                   <p className="text-sm text-default-600">
-                    Once you delete your account, there is no going back. Please be certain.
+                    Once you delete your account, there is no going back. Please
+                    be certain.
                   </p>
                   <Input
-                    variant="bordered"
                     color="danger"
                     value={deleteConfirm}
-                    onChange={e => setDeleteConfirm(e.target.value)}
+                    variant="bordered"
+                    onChange={(e) => setDeleteConfirm(e.target.value)}
                   />
-                  {deleteError && <div className="text-danger text-sm">{deleteError}</div>}
-                  <Button color="danger" onPress={handleDeleteAccount} isLoading={deleteLoading}>
+                  {deleteError && (
+                    <div className="text-danger text-sm">{deleteError}</div>
+                  )}
+                  <Button
+                    color="danger"
+                    isLoading={deleteLoading}
+                    onPress={handleDeleteAccount}
+                  >
                     Delete Account
                   </Button>
                 </div>
@@ -705,7 +850,7 @@ export default function SettingsPage() {
         </div>
 
         {/* Delete Account Modal */}
-        <Modal isOpen={isOpen} onClose={onClose} size="lg">
+        <Modal isOpen={isOpen} size="lg" onClose={onClose}>
           <ModalContent>
             <ModalHeader className="flex flex-col gap-1">
               <div className="flex items-center gap-2">
@@ -721,15 +866,16 @@ export default function SettingsPage() {
                     <span className="font-semibold text-danger">Warning</span>
                   </div>
                   <p className="text-sm text-default-600">
-                    This action cannot be undone. This will permanently delete your account and remove all your data from our servers.
+                    This action cannot be undone. This will permanently delete
+                    your account and remove all your data from our servers.
                   </p>
                 </div>
-                
+
                 <Input
+                  color="danger"
                   label="Type 'DELETE' to confirm"
                   placeholder="DELETE"
                   variant="bordered"
-                  color="danger"
                 />
               </div>
             </ModalBody>
@@ -746,4 +892,4 @@ export default function SettingsPage() {
       </div>
     </DashboardLayout>
   );
-} 
+}

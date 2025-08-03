@@ -1,5 +1,3 @@
-"use client";
-
 import { Card, CardBody, CardHeader } from "@heroui/card";
 import { Button } from "@heroui/button";
 import { Chip } from "@heroui/chip";
@@ -62,7 +60,8 @@ The invoice is well-structured and includes all necessary tax information. The c
   }
 };
 
-export default function InvoiceDetailPage({ params }: { params: { id: string } }) {
+export default async function InvoiceDetailPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
   return (
     <DashboardLayout>
       <div className="space-y-6">

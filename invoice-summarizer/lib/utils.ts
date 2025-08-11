@@ -177,3 +177,12 @@ export async function logOperation(
     console.error("Error logging operation:", error);
   }
 }
+
+export function getDefaultAvatarUrl(name?: string, email?: string) {
+  // Use name or email to generate a consistent avatar
+  const identifier = name || email || "user";
+  const encoded = encodeURIComponent(identifier);
+  
+  // Use a reliable avatar service with fallback
+  return `https://ui-avatars.com/api/?name=${encoded}&background=6366f1&color=ffffff&size=150&bold=true&format=svg`;
+}

@@ -19,6 +19,7 @@ import {
 } from "@heroicons/react/24/outline";
 
 import { title, subtitle } from "@/components/primitives";
+import { getDefaultAvatarUrl } from "@/lib/utils";
 
 export default function AboutPage() {
   return (
@@ -336,7 +337,7 @@ export default function AboutPage() {
                   className="w-20 h-20 mx-auto mb-4"
                   name="Subhan Farooq"
                   size="lg"
-                  src="/api/placeholder/150/150"
+                  src={getDefaultAvatarUrl("Subhan Farooq")}
                 />
                 <h3 className="text-xl font-semibold mb-2">Subhan Farooq</h3>
                 <p className="text-primary font-medium mb-4">Founder & CEO</p>

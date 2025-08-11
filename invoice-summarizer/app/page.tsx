@@ -24,6 +24,7 @@ import {
 
 import { siteConfig } from "@/config/site";
 import { title, subtitle } from "@/components/primitives";
+import { getDefaultAvatarUrl } from "@/lib/utils";
 
 export default function Home() {
   return (
@@ -497,7 +498,7 @@ export default function Home() {
                 <div className="flex items-center gap-4">
                   <Avatar
                     name="Emma Davis"
-                    src="https://i.pravatar.cc/150?u=3"
+                    src={getDefaultAvatarUrl("Emma Davis")}
                   />
                   <div>
                     <p className="font-semibold">Emma Davis</p>

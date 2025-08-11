@@ -17,25 +17,26 @@ import {
 } from "@heroui/modal";
 import {
   UserIcon,
-  BuildingOfficeIcon,
-  ShieldCheckIcon,
-  BellIcon,
-  TrashIcon,
-  CameraIcon,
   EnvelopeIcon,
   PhoneIcon,
+  CameraIcon,
+  BuildingOfficeIcon,
+  BellIcon,
+  ShieldCheckIcon,
+  TrashIcon,
+  ExclamationTriangleIcon,
+  Cog6ToothIcon,
   GlobeAltIcon,
   MapPinIcon,
   KeyIcon,
-  ExclamationTriangleIcon,
   CheckCircleIcon,
-  CogIcon,
 } from "@heroicons/react/24/outline";
 import toast from "react-hot-toast";
 
 import { title, subtitle } from "@/components/primitives";
 import DashboardLayout from "@/components/dashboard-layout";
 import { supabase } from "@/lib/supabaseClient";
+import { getDefaultAvatarUrl } from "@/lib/utils";
 
 export default function SettingsPage() {
   const [notifications, setNotifications] = useState({
@@ -370,7 +371,7 @@ export default function SettingsPage() {
             <Button
               color="primary"
               isLoading={saveLoading}
-              startContent={<CogIcon className="w-4 h-4" />}
+              startContent={<Cog6ToothIcon className="w-4 h-4" />}
               onPress={handleSaveProfile}
             >
               Save Changes
@@ -406,7 +407,7 @@ export default function SettingsPage() {
                         name={profile.first_name + " " + profile.last_name}
                         size="lg"
                         src={
-                          profile.avatar_url || "https://i.pravatar.cc/150?u=1"
+                          profile.avatar_url || getDefaultAvatarUrl(profile.first_name + " " + profile.last_name, profile.email)
                         }
                       />
                       <div className="flex gap-3">
@@ -502,7 +503,7 @@ export default function SettingsPage() {
                     <Button
                       color="primary"
                       isLoading={saveLoading}
-                      startContent={<CogIcon className="w-4 h-4" />}
+                      startContent={<Cog6ToothIcon className="w-4 h-4" />}
                       onPress={handleSaveProfile}
                     >
                       Save Changes

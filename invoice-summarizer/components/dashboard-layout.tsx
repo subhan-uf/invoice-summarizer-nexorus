@@ -27,6 +27,7 @@ import { useEffect } from "react";
 import toast from "react-hot-toast";
 
 import { supabase } from "@/lib/supabaseClient";
+import { getDefaultAvatarUrl } from "@/lib/utils";
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
@@ -189,7 +190,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                       name={user?.email || "User"}
                       size="sm"
                       src={
-                        profile?.avatar_url || "https://i.pravatar.cc/150?u=1"
+                        profile?.avatar_url || getDefaultAvatarUrl(user?.email)
                       }
                     />
                     <span className="hidden md:block">

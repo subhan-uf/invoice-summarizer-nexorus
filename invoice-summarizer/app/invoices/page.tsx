@@ -94,6 +94,7 @@ export default function InvoicesPage() {
   const [sendingEmail, setSendingEmail] = useState(false);
   const [checkingEmail, setCheckingEmail] = useState(false);
   const [isGmailConnected, setIsGmailConnected] = useState(false);
+  const [isDragOver, setIsDragOver] = useState(false);
 
   useEffect(() => {
     setMounted(true);
@@ -299,6 +300,32 @@ export default function InvoicesPage() {
     const files = Array.from(e.target.files).slice(0, 5);
 
     setSelectedFiles(files);
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragOver(true);
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragOver(false);
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragOver(false);
+    
+    if (!e.dataTransfer.files) return;
+    const files = Array.from(e.dataTransfer.files).slice(0, 5);
+    
+    // Filter for supported file types
+    const supportedFiles = files.filter(file => 
+      file.type === 'application/pdf' || 
+      file.type.startsWith('image/')
+    );
+    
+    setSelectedFiles(supportedFiles);
   };
 
   const handleUpload = async () => {
@@ -630,12 +657,21 @@ export default function InvoicesPage() {
         <GmailConnect variant="card" />
 
         {/* Upload Area */}
-        <Card className="bg-gradient-to-r from-primary/10 to-secondary/10 border-2 border-dashed border-primary/30">
+        <Card 
+          className={`bg-gradient-to-r from-primary/10 to-secondary/10 border-2 border-dashed transition-colors ${
+            isDragOver ? 'border-primary bg-primary/20' : 'border-primary/30'
+          }`}
+          onDragOver={handleDragOver}
+          onDragLeave={handleDragLeave}
+          onDrop={handleDrop}
+        >
           <CardBody className="p-12 text-center">
             <div className="bg-primary/20 rounded-full p-6 w-20 h-20 mx-auto mb-6 flex items-center justify-center">
               <CloudArrowUpIcon className="w-8 h-8 text-primary" />
             </div>
-            <h3 className="text-xl font-semibold mb-2">Upload Your Invoices</h3>
+            <h3 className="text-xl font-semibold mb-2">
+              {isDragOver ? 'Drop Files Here' : 'Upload Your Invoices'}
+            </h3>
             <p className="text-default-600 mb-6 max-w-md mx-auto">
               Drag and drop your invoice files here, or click to browse. Our
               system also automatically detects invoice emails and processes
@@ -650,11 +686,19 @@ export default function InvoicesPage() {
                 Choose Files
               </Button>
               <Button
+                as="label"
                 color="primary"
                 startContent={<DocumentTextIcon className="w-4 h-4" />}
                 variant="bordered"
               >
                 Browse Files
+                <input
+                  hidden
+                  multiple
+                  accept=".pdf,.png,.jpg,.jpeg"
+                  type="file"
+                  onChange={handleFileChange}
+                />
               </Button>
             </div>
             <p className="text-xs text-default-500 mt-4">
@@ -1007,23 +1051,42 @@ export default function InvoicesPage() {
             </ModalHeader>
             <ModalBody>
               <div className="space-y-6">
-                <div className="border-2 border-dashed border-divider rounded-lg p-8 text-center">
+                <div 
+                  className={`border-2 border-dashed rounded-lg p-8 text-center transition-colors ${
+                    isDragOver 
+                      ? 'border-primary bg-primary/5' 
+                      : 'border-divider'
+                  }`}
+                  onDragOver={handleDragOver}
+                  onDragLeave={handleDragLeave}
+                  onDrop={handleDrop}
+                >
                   <div className="bg-primary/10 rounded-full p-4 w-16 h-16 mx-auto mb-4 flex items-center justify-center">
                     <CloudArrowUpIcon className="w-8 h-8 text-primary" />
                   </div>
                   <h3 className="text-lg font-semibold mb-2">
-                    Drag & Drop Files Here
+                    {isDragOver ? 'Drop Files Here' : 'Drag & Drop Files Here'}
                   </h3>
                   <p className="text-default-600 mb-4">
                     Or click to browse your computer for invoice files
                   </p>
-                  <input
-                    multiple
-                    accept=".pdf,.png,.jpg,.jpeg"
+                  <Button
+                    as="label"
+                    color="primary"
                     disabled={uploading}
-                    type="file"
-                    onChange={handleFileChange}
-                  />
+                    startContent={<CloudArrowUpIcon className="w-4 h-4" />}
+                    variant="bordered"
+                  >
+                    Browse Files
+                    <input
+                      hidden
+                      multiple
+                      accept=".pdf,.png,.jpg,.jpeg"
+                      disabled={uploading}
+                      type="file"
+                      onChange={handleFileChange}
+                    />
+                  </Button>
                   {selectedFiles.length > 0 && (
                     <div className="mt-4 text-left">
                       <p className="font-medium mb-2">Selected files:</p>

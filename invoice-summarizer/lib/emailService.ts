@@ -54,8 +54,9 @@ export async function sendSummaryEmail(
       }
     }
 
-    // Determine recipient email - use client email if available, otherwise use user's email
-    const recipientEmail = clientEmail || user.email;
+    // Determine recipient email - prioritize user's email over client email
+    // This ensures emails are sent to the account owner by default
+    const recipientEmail = user.email || clientEmail;
 
     if (!recipientEmail) {
       return { success: false, error: "No recipient email found" };

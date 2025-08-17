@@ -20,14 +20,11 @@ import {
   EnvelopeIcon,
   PhoneIcon,
   CameraIcon,
-  BuildingOfficeIcon,
   BellIcon,
   ShieldCheckIcon,
   TrashIcon,
   ExclamationTriangleIcon,
   Cog6ToothIcon,
-  GlobeAltIcon,
-  MapPinIcon,
   KeyIcon,
   CheckCircleIcon,
 } from "@heroicons/react/24/outline";
@@ -407,7 +404,11 @@ export default function SettingsPage() {
                         name={profile.first_name + " " + profile.last_name}
                         size="lg"
                         src={
-                          profile.avatar_url || getDefaultAvatarUrl(profile.first_name + " " + profile.last_name, profile.email)
+                          profile.avatar_url ||
+                          getDefaultAvatarUrl(
+                            profile.first_name + " " + profile.last_name,
+                            profile.email,
+                          )
                         }
                       />
                       <div className="flex gap-3">
@@ -510,80 +511,6 @@ export default function SettingsPage() {
                     </Button>
                   </div>
                 )}
-              </CardBody>
-            </Card>
-
-            {/* Company Information */}
-            <Card className="bg-content1/50 backdrop-blur-sm border-1 border-divider/50">
-              <CardHeader className="pb-4">
-                <div className="flex items-center gap-3">
-                  <div className="bg-secondary/10 rounded-full p-2">
-                    <BuildingOfficeIcon className="w-5 h-5 text-secondary" />
-                  </div>
-                  <h3 className="text-lg font-semibold">Company Information</h3>
-                </div>
-              </CardHeader>
-              <CardBody className="pt-0">
-                <div className="space-y-6">
-                  <div className="flex items-center gap-6">
-                    <div className="bg-secondary/20 rounded-lg p-4 w-16 h-16 flex items-center justify-center">
-                      <BuildingOfficeIcon className="w-8 h-8 text-secondary" />
-                    </div>
-                    <div className="flex gap-3">
-                      <Button
-                        color="secondary"
-                        size="sm"
-                        startContent={<CameraIcon className="w-4 h-4" />}
-                        variant="bordered"
-                      >
-                        Upload Logo
-                      </Button>
-                      <Button color="danger" size="sm" variant="light">
-                        Remove
-                      </Button>
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <Input
-                      defaultValue="AI Invoice Summarizer"
-                      label="Company Name"
-                      placeholder="Your Company Name"
-                      startContent={
-                        <BuildingOfficeIcon className="w-4 h-4 text-default-400" />
-                      }
-                      variant="bordered"
-                    />
-                    <Input
-                      defaultValue="https://invoice-summarizer.com"
-                      label="Website"
-                      placeholder="https://example.com"
-                      startContent={
-                        <GlobeAltIcon className="w-4 h-4 text-default-400" />
-                      }
-                      variant="bordered"
-                    />
-                  </div>
-
-                  <textarea
-                    className="border rounded-lg p-2 w-full min-h-[80px]"
-                    placeholder="Brief description of your company"
-                    value={profile?.tagline || ""}
-                    onChange={(e) =>
-                      handleProfileChange("tagline", e.target.value)
-                    }
-                  />
-
-                  <Input
-                    defaultValue="123 Business St, City, State 12345"
-                    label="Address"
-                    placeholder="Enter your business address"
-                    startContent={
-                      <MapPinIcon className="w-4 h-4 text-default-400" />
-                    }
-                    variant="bordered"
-                  />
-                </div>
               </CardBody>
             </Card>
 

@@ -113,7 +113,12 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
         />
         <div className="fixed inset-y-0 left-0 w-64 bg-content1 border-r border-divider">
           <div className="flex items-center justify-between p-4 border-b border-divider">
-            <h2 className="text-lg font-semibold">AI Invoice Summarizer</h2>
+            <h2 className="text-lg font-semibold leading-tight">
+              AI Invoice Summarizer
+              <span className="block text-xs font-normal text-default-500">
+                By Nexorus
+              </span>
+            </h2>
             <Button
               isIconOnly
               variant="light"
@@ -141,7 +146,12 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
       <div className="hidden lg:fixed lg:inset-y-0 lg:z-50 lg:flex lg:w-64 lg:flex-col">
         <div className="flex grow flex-col gap-y-5 overflow-y-auto bg-content1 border-r border-divider px-6">
           <div className="flex h-16 shrink-0 items-center">
-            <h2 className="text-lg font-semibold">AI Invoice Summarizer</h2>
+            <h2 className="text-lg font-semibold leading-tight">
+              AI Invoice Summarizer
+              <span className="block text-xs font-normal text-default-500">
+                By Nexorus
+              </span>
+            </h2>
           </div>
           <nav className="flex flex-1 flex-col">
             <ul className="flex flex-1 flex-col gap-y-7">

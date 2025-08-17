@@ -95,22 +95,13 @@ export default function SignupPage() {
                   Click the link in your email to verify your account and start
                   using AI Invoice Summarizer.
                 </p>
-                <div className="bg-warning/10 border border-warning/20 rounded-lg p-4">
-                  <p className="text-sm text-warning">
-                    <strong>Can&apos;t find the email?</strong> Check your spam
-                    folder or try signing up again.
-                  </p>
-                </div>
                 <Button
-                  variant="bordered"
+                  color="primary"
                   onPress={() => {
-                    setShowVerificationMessage(false);
-                    setEmail("");
-                    setPassword("");
-                    setConfirmPassword("");
+                    router.push("/login");
                   }}
                 >
-                  Try Again
+                  Go to Login
                 </Button>
               </div>
             </CardBody>

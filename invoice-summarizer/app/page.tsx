@@ -240,7 +240,7 @@ export default function Home() {
       </section>
 
       {/* Pricing Section */}
-      <section className="py-24 bg-gradient-to-br from-content1/20 to-background">
+      <section className="py-24 bg-gradient-to-br from-content1/20 to-background" id="pricing">
         <div className="container mx-auto max-w-6xl px-6">
           <div className="text-center mb-20">
             <div className="flex justify-center mb-6">

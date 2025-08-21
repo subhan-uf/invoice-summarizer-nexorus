@@ -34,6 +34,7 @@ import { title, subtitle } from "@/components/primitives";
 import DashboardLayout from "@/components/dashboard-layout";
 import { supabase } from "@/lib/supabaseClient";
 import { getDefaultAvatarUrl } from "@/lib/utils";
+import { getUserQuotaStatus } from "@/lib/userUtils";
 
 export default function SettingsPage() {
   const [notifications, setNotifications] = useState({
@@ -62,6 +63,7 @@ export default function SettingsPage() {
   const [passwordLoading, setPasswordLoading] = useState(false);
   const [passwordError, setPasswordError] = useState("");
   const [passwordSuccess, setPasswordSuccess] = useState("");
+  const [quota, setQuota] = useState<any | null>(null);
 
   const { isOpen, onClose } = useDisclosure();
 
@@ -97,6 +99,21 @@ export default function SettingsPage() {
     };
 
     fetchProfile();
+    // fetch quota
+    (async () => {
+      try {
+        const {
+          data: { user },
+        } = await supabase.auth.getUser();
+
+        if (user) {
+          const q = await getUserQuotaStatus(user.id);
+          setQuota(q);
+        }
+      } catch (e) {
+        console.warn("Failed to fetch quota status:", e);
+      }
+    })();
   }, []);
 
   const handleNotificationChange = (key: string, value: boolean) => {
@@ -583,6 +600,28 @@ export default function SettingsPage() {
 
           {/* Sidebar */}
           <div className="space-y-6">
+            {/* Subscription Card */}
+            <Card className="bg-content1/50 backdrop-blur-sm border-1 border-divider/50">
+              <CardBody className="p-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-default-600">Subscription</p>
+                    <p className="font-medium">Free Trial</p>
+                    {quota && (
+                      <p className="text-sm text-default-500 mt-1">
+                        {quota.uploadsLeft} uploads left • {quota.emailsLeft} detections left
+                      </p>
+                    )}
+                    {quota && (
+                      <p className="text-xs text-default-400 mt-1">Resets: {quota.resetAt ? new Date(quota.resetAt).toLocaleString() : '—'}</p>
+                    )}
+                  </div>
+                  <div>
+                    <Button isDisabled variant="bordered">Upgrade (coming soon)</Button>
+                  </div>
+                </div>
+              </CardBody>
+            </Card>
             {/* Notification Preferences */}
             <Card className="bg-content1/50 backdrop-blur-sm border-1 border-divider/50">
               <CardHeader className="pb-4">
@@ -753,7 +792,7 @@ export default function SettingsPage() {
                 <div className="space-y-4">
                   <p className="text-sm text-default-600">
                     Once you delete your account, there is no going back. Please
-                    be certain.
+                    be certain. Enter "DELETE" below to confirm.
                   </p>
                   <Input
                     color="danger"

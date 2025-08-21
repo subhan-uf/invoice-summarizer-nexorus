@@ -270,11 +270,11 @@ export default function Home() {
                 <div className="space-y-4 mb-8">
                   <div className="flex items-center gap-3">
                     <CheckIcon className="w-5 h-5 text-success" />
-                    <span>10 invoices per month</span>
+                    <span>3 invoices per month</span>
                   </div>
                   <div className="flex items-center gap-3">
                     <CheckIcon className="w-5 h-5 text-success" />
-                    <span>Email detection</span>
+                    <span>3 Email detections</span>
                   </div>
                   <div className="flex items-center gap-3">
                     <CheckIcon className="w-5 h-5 text-success" />
@@ -339,15 +339,15 @@ export default function Home() {
                     <span>Priority support</span>
                   </div>
                 </div>
-                <Button
-                  as={Link}
-                  className="w-full"
-                  color="primary"
-                  href="/signup"
-                  size="lg"
-                >
-                  Start Pro Trial
-                </Button>
+<Button
+  as={Link}
+  className="w-full pointer-events-none opacity-50 cursor-not-allowed"
+  color="primary"
+  size="lg"
+>
+  COMING SOON
+</Button>
+
               </CardBody>
             </Card>
 
@@ -387,16 +387,15 @@ export default function Home() {
                     <span>Custom training</span>
                   </div>
                 </div>
-                <Button
-                  as={Link}
-                  className="w-full"
-                  color="primary"
-                  href="/contact"
-                  size="lg"
-                  variant="bordered"
-                >
-                  Contact Sales
-                </Button>
+<Button
+  as={Link}
+  className="w-full pointer-events-none opacity-50 cursor-not-allowed"
+  color="primary"
+  size="lg"
+>
+  COMING SOON
+</Button>
+
               </CardBody>
             </Card>
           </div>
@@ -766,24 +765,14 @@ export default function Home() {
               © 2024 AI Invoice Summarizer by Subhan. All rights reserved.
             </p>
             <div className="flex gap-6 mt-4 md:mt-0">
-              <Link
-                className="text-default-600 hover:text-primary transition-colors"
-                href={siteConfig.links.twitter}
-              >
-                Twitter
-              </Link>
+         
               <Link
                 className="text-default-600 hover:text-primary transition-colors"
                 href={siteConfig.links.github}
               >
                 GitHub
               </Link>
-              <Link
-                className="text-default-600 hover:text-primary transition-colors"
-                href={siteConfig.links.discord}
-              >
-                Discord
-              </Link>
+      
             </div>
           </div>
         </div>

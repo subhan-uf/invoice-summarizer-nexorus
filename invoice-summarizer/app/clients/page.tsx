@@ -45,6 +45,7 @@ import {
 import { title, subtitle } from "@/components/primitives";
 import DashboardLayout from "@/components/dashboard-layout";
 import { supabase } from "@/lib/supabaseClient";
+import { getUserQuotaStatus } from "@/lib/userUtils";
 
 export default function ClientsPage() {
   const [searchQuery, setSearchQuery] = useState("");
@@ -57,6 +58,7 @@ export default function ClientsPage() {
   const [modalLoading, setModalLoading] = useState(false);
   const [modalError, setModalError] = useState("");
   const [mounted, setMounted] = useState(false);
+  const [quota, setQuota] = useState<any | null>(null);
 
   useEffect(() => {
     setMounted(true);
@@ -88,6 +90,18 @@ export default function ClientsPage() {
         setClients(data || []);
       }
       setLoading(false);
+      try {
+        const {
+          data: { user },
+        } = await supabase.auth.getUser();
+
+        if (user) {
+          const q = await getUserQuotaStatus(user.id);
+          setQuota(q);
+        }
+      } catch (e) {
+        console.warn("Failed to fetch quota status:", e);
+      }
     };
 
     fetchClients();
@@ -220,9 +234,19 @@ export default function ClientsPage() {
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div>
             <h1 className={title({ size: "lg" })}>Clients</h1>
-            <p className={subtitle({ class: "mt-2" })}>
-              Manage your client database and track invoice relationships
-            </p>
+            <div className="flex items-center gap-4">
+              <p className={subtitle({ class: "mt-2" })}>
+                Manage your client database and track invoice relationships
+              </p>
+              {quota && (
+                <div className="text-sm text-default-500">
+                  Uploads left: {quota.uploadsLeft}/{quota.uploadsLimit}
+                  {quota.resetAt ? (
+                    <div className="text-xs">Resets: {new Date(quota.resetAt).toLocaleDateString()}</div>
+                  ) : null}
+                </div>
+              )}
+            </div>
           </div>
           <div className="flex gap-3">
             <Button

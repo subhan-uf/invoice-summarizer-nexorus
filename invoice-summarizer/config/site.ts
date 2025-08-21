@@ -49,10 +49,10 @@ export const siteConfig = {
     },
   ],
   links: {
-    github: "https://github.com/subhan/invoice-summarizer",
-    twitter: "https://twitter.com/subhan",
+    github: "https://github.com/subhan-uf",
+  
     docs: "https://docs.invoice-summarizer.com",
-    discord: "https://discord.gg/invoice-summarizer",
+   
     sponsor: "https://patreon.com/subhan",
   },
 };

@@ -33,6 +33,7 @@ import {
 import { title, subtitle } from "@/components/primitives";
 import DashboardLayout from "@/components/dashboard-layout";
 import { supabase } from "@/lib/supabaseClient";
+import { getUserQuotaStatus } from "@/lib/userUtils";
 
 const statusColors = {
   delivered: "success",
@@ -53,6 +54,7 @@ export default function EmailHistoryPage() {
   const [emails, setEmails] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [quota, setQuota] = useState<any | null>(null);
 
   useEffect(() => {
     const fetchEmails = async () => {
@@ -80,6 +82,18 @@ export default function EmailHistoryPage() {
         setEmails(data || []);
       }
       setLoading(false);
+      try {
+        const {
+          data: { user },
+        } = await supabase.auth.getUser();
+
+        if (user) {
+          const q = await getUserQuotaStatus(user.id);
+          setQuota(q);
+        }
+      } catch (e) {
+        console.warn("Failed to fetch quota status:", e);
+      }
     };
 
     fetchEmails();
@@ -126,6 +140,20 @@ export default function EmailHistoryPage() {
 
         {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+          {quota && (
+            <Card className="bg-content1/50 backdrop-blur-sm">
+              <CardBody className="p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-default-600">Free Uploads Left</p>
+                    <p className="text-2xl font-bold">{quota.uploadsLeft}</p>
+                    <p className="text-sm text-default-600">Detections left: {quota.emailsLeft}/{quota.emailsLimit}</p>
+                    <p className="text-xs text-default-500">Resets: {quota.resetAt ? new Date(quota.resetAt).toLocaleString() : '—'}</p>
+                  </div>
+                </div>
+              </CardBody>
+            </Card>
+          )}
           <Card className="bg-content1/50 backdrop-blur-sm">
             <CardBody className="p-6">
               <div className="flex items-center justify-between">

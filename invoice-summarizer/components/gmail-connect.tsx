@@ -15,11 +15,13 @@ import { supabase } from "@/lib/supabaseClient";
 interface GmailConnectProps {
   className?: string;
   variant?: "card" | "button";
+  isFreeTrial?: boolean;
 }
 
 export default function GmailConnect({
   className = "",
   variant = "card",
+  isFreeTrial = true,
 }: GmailConnectProps) {
   const [isConnected, setIsConnected] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -251,22 +253,26 @@ export default function GmailConnect({
                 size="sm"
                 startContent={<EnvelopeIcon className="w-4 h-4" />}
                 onPress={handleConnectGmail}
+                isDisabled={isFreeTrial}
+                title={isFreeTrial ? "Upgrade to Pro to enable Gmail integration (coming soon)" : undefined}
               >
-                Connect Gmail
+                {isFreeTrial ? "Gmail (Upgrade Required)" : "Connect Gmail"}
               </Button>
             </div>
           </CardBody>
         </Card>
       ) : (
-        <Button
-          className="w-full"
-          color="primary"
-          isLoading={connecting}
-          startContent={<EnvelopeIcon className="w-4 h-4" />}
-          onPress={handleConnectGmail}
-        >
-          Connect your Gmail
-        </Button>
+          <Button
+            className="w-full"
+            color="primary"
+            isLoading={connecting}
+            startContent={<EnvelopeIcon className="w-4 h-4" />}
+            onPress={handleConnectGmail}
+            isDisabled={isFreeTrial}
+            title={isFreeTrial ? "Upgrade to Pro to enable Gmail integration (coming soon)" : undefined}
+          >
+            {isFreeTrial ? "Gmail (Upgrade Required)" : "Connect your Gmail"}
+          </Button>
       )}
     </div>
   );

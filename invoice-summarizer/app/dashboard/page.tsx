@@ -22,6 +22,7 @@ import { title, subtitle } from "@/components/primitives";
 import DashboardLayout from "@/components/dashboard-layout";
 import { supabase } from "@/lib/supabaseClient";
 import GmailConnect from "@/components/gmail-connect";
+import { getUserQuotaStatus } from "@/lib/userUtils";
 
 // Mock data
 const _stats = [
@@ -130,6 +131,7 @@ export default function DashboardPage() {
   const [showMessage, setShowMessage] = useState(false);
   const [checkingEmail, setCheckingEmail] = useState(false);
   const [isGmailConnected, setIsGmailConnected] = useState(false);
+  const [quota, setQuota] = useState<any | null>(null);
 
   useEffect(() => {
     // Check for URL parameters for success/error messages
@@ -186,6 +188,18 @@ export default function DashboardPage() {
       setEmails(emailRes.data || []);
       setClients(clientRes.data || []);
       setLoading(false);
+      try {
+        const {
+          data: { user },
+        } = await supabase.auth.getUser();
+
+        if (user) {
+          const q = await getUserQuotaStatus(user.id);
+          setQuota(q);
+        }
+      } catch (e) {
+        console.warn("Failed to fetch quota status:", e);
+      }
     };
 
     fetchAll();
@@ -361,25 +375,38 @@ export default function DashboardPage() {
               PDF output
             </p>
           </div>
-          <div className="flex gap-3">
-            <Button
-              color="primary"
-              startContent={<BellIcon className="w-4 h-4" />}
-              variant="bordered"
-            >
-              Notifications
-            </Button>
-            <Button
-              color="primary"
-              startContent={<CloudArrowUpIcon className="w-4 h-4" />}
-            >
-              Upload Invoice
-            </Button>
-          </div>
+              <div className="flex gap-3 items-center">
+                <Button
+                  color="primary"
+                  startContent={<BellIcon className="w-4 h-4" />}
+                  variant="bordered"
+                >
+                  Notifications
+                </Button>
+
+                <div className="flex items-center gap-2">
+                  <Button
+                    color="primary"
+                    startContent={<CloudArrowUpIcon className="w-4 h-4" />}
+                    isDisabled={!!quota && quota.uploadsLeft <= 0}
+                    title={quota && quota.uploadsLeft <= 0 ? `Free uploads ended. Reset on ${quota.resetAt ?? '\u2014'}` : undefined}
+                  >
+                    Upload Invoice
+                  </Button>
+                  <div className="text-sm text-default-500">
+                    {quota
+                      ? `Uploads left ${quota.uploadsLeft}/${quota.uploadsLimit}`
+                      : "Uploads left —"}
+                    {quota && quota.resetAt ? (
+                      <div className="text-xs text-default-400">Resets: {new Date(quota.resetAt).toLocaleDateString()}</div>
+                    ) : null}
+                  </div>
+                </div>
+              </div>
         </div>
 
         {/* Gmail Connection Status */}
-        <GmailConnect variant="card" />
+  <GmailConnect variant="card" isFreeTrial={!!quota} />
 
         {/* Check Email Button */}
         <Card className="bg-content1/50 backdrop-blur-sm border-1 border-divider/50">
@@ -398,10 +425,11 @@ export default function DashboardPage() {
               </div>
               <Button
                 color="secondary"
-                isDisabled={!isGmailConnected}
+                isDisabled={!isGmailConnected || (!!quota && quota.emailsLeft <= 0)}
                 isLoading={checkingEmail}
                 startContent={<InboxIcon className="w-4 h-4" />}
                 onPress={handleCheckEmail}
+                title={quota && quota.emailsLeft <= 0 ? `Free detections ended. Reset on ${quota.resetAt ?? '—'}` : undefined}
               >
                 Check Email
               </Button>

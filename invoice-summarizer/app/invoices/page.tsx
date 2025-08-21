@@ -51,6 +51,7 @@ import DashboardLayout from "@/components/dashboard-layout";
 import { supabase } from "@/lib/supabaseClient";
 import { generateSummaryText } from "@/lib/utils";
 import GmailConnect from "@/components/gmail-connect";
+import { getUserQuotaStatus } from "@/lib/userUtils";
 
 const statusColors = {
   processed: "success",
@@ -94,6 +95,7 @@ export default function InvoicesPage() {
   const [sendingEmail, setSendingEmail] = useState(false);
   const [checkingEmail, setCheckingEmail] = useState(false);
   const [isGmailConnected, setIsGmailConnected] = useState(false);
+  const [quota, setQuota] = useState<any | null>(null);
   const [isDragOver, setIsDragOver] = useState(false);
 
   useEffect(() => {
@@ -165,7 +167,7 @@ export default function InvoicesPage() {
 
     setupRealtime();
 
-    // Check Gmail connection status
+    // Check Gmail connection status and quota
     const checkGmailConnection = async () => {
       const {
         data: { user },
@@ -179,6 +181,12 @@ export default function InvoicesPage() {
           .single();
 
         setIsGmailConnected(!!gmailTokens);
+        try {
+          const q = await getUserQuotaStatus(user.id);
+          setQuota(q);
+        } catch (e) {
+          console.warn("Failed to fetch quota status:", e);
+        }
       }
     };
 
@@ -625,17 +633,27 @@ export default function InvoicesPage() {
               PDF output
             </p>
           </div>
-          <div className="flex gap-3">
-            <Button
-              color="secondary"
-              isDisabled={!isGmailConnected}
-              isLoading={checkingEmail}
-              startContent={<InboxIcon className="w-4 h-4" />}
-              variant="bordered"
-              onPress={handleCheckEmail}
-            >
-              Check Email
-            </Button>
+          <div className="flex gap-3 items-center">
+            <div className="flex items-center gap-2">
+              <Button
+                color="secondary"
+                isDisabled={!isGmailConnected || (!!quota && quota.emailsLeft <= 0)}
+                isLoading={checkingEmail}
+                startContent={<InboxIcon className="w-4 h-4" />}
+                variant="bordered"
+                onPress={handleCheckEmail}
+                title={quota && quota.emailsLeft <= 0 ? `Free detections ended. Reset on ${quota.resetAt ?? '—'}` : undefined}
+              >
+                Check Email
+              </Button>
+              <div className="text-sm text-default-500">
+                {quota ? `Detections left ${quota.emailsLeft}/${quota.emailsLimit}` : 'Detections left —'}
+                {quota && quota.resetAt ? (
+                  <div className="text-xs text-default-400">Resets: {new Date(quota.resetAt).toLocaleDateString()}</div>
+                ) : null}
+              </div>
+            </div>
+
             <Button
               color="primary"
               startContent={<DocumentArrowDownIcon className="w-4 h-4" />}
@@ -643,13 +661,26 @@ export default function InvoicesPage() {
             >
               Export
             </Button>
-            <Button
-              color="primary"
-              startContent={<PlusIcon className="w-4 h-4" />}
-              onPress={onOpen}
-            >
-              Upload Invoice
-            </Button>
+
+            <div className="flex items-center gap-2">
+              <Button
+                color="primary"
+                startContent={<PlusIcon className="w-4 h-4" />}
+                onPress={onOpen}
+                isDisabled={!!quota && quota.uploadsLeft <= 0}
+                title={quota && quota.uploadsLeft <= 0 ? `Free uploads ended. Reset on ${quota.resetAt ?? '—'}` : undefined}
+              >
+                Upload Invoice
+              </Button>
+                  <div className="text-sm text-default-500">
+                    {quota
+                      ? `Uploads left ${quota.uploadsLeft}/${quota.uploadsLimit}`
+                      : "Uploads left —"}
+                    {quota && quota.resetAt ? (
+                      <div className="text-xs text-default-400">Resets: {new Date(quota.resetAt).toLocaleDateString()}</div>
+                    ) : null}
+                  </div>
+            </div>
           </div>
         </div>
 
@@ -678,13 +709,20 @@ export default function InvoicesPage() {
               them instantly.
             </p>
             <div className="flex flex-col sm:flex-row gap-3 justify-center">
-              <Button
-                color="primary"
-                startContent={<CloudArrowUpIcon className="w-4 h-4" />}
-                onPress={onOpen}
-              >
-                Choose Files
-              </Button>
+              <div className="flex items-center gap-2">
+                <Button
+                  color="primary"
+                  startContent={<CloudArrowUpIcon className="w-4 h-4" />}
+                  onPress={onOpen}
+                  isDisabled={!!quota && quota.uploadsLeft <= 0}
+                  title={quota && quota.uploadsLeft <= 0 ? `Free uploads ended. Reset on ${quota.resetAt ?? '—'}` : undefined}
+                >
+                  Choose Files
+                </Button>
+                <div className="text-sm text-default-500">
+                  {quota ? `Uploads left ${quota.uploadsLeft}/${quota.uploadsLimit}` : 'Uploads left —'}
+                </div>
+              </div>
               <Button
                 as="label"
                 color="primary"

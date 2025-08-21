@@ -1,9 +1,8 @@
-// next.config.js
+// next.config.js  (ESM)
+/// <reference types="next" />
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  eslint: {
-    // Build succeeds even if there are ESLint errors
-    ignoreDuringBuilds: true,
-  },
+  eslint: { ignoreDuringBuilds: true },
+  // typescript: { ignoreBuildErrors: true }, // optional
 };
-module.exports = nextConfig;
+export default nextConfig;
